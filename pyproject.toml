@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "weighted-emergent-bias"
+version = "0.0.0"
+description = "A runtime circuit-breaker for the Degeneration-of-Thought (DoT) problem in multi-agent LLM systems."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Harish" }]
+keywords = ["llm", "multi-agent", "bias", "langgraph", "fairness", "circuit-breaker"]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["numpy>=1.24", "networkx>=3.0"]
+
+[project.optional-dependencies]
+langgraph = ["langgraph>=0.2"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.6", "mypy>=1.11"]
+
+[project.urls]
+Homepage = "https://github.com/krishddd/weighted-emergent-bias"
+Documentation = "https://github.com/krishddd/weighted-emergent-bias/blob/main/docs/DESIGN.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/weighted_emergent_bias"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
