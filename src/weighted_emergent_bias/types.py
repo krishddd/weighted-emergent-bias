@@ -17,12 +17,20 @@ Design notes:
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 # Semantic aliases — these are just ``str`` at runtime, but they document intent.
 NodeId = str
 Axis = str
+
+# A node's input/output payload: a string, or a nested structure of them. Real agent state
+# is structured (dicts of fields, lists of messages), so perturbation traverses it and edits
+# only the string leaves. ``str`` is listed first because it is both the base case and,
+# technically, a ``Sequence`` — traversal must check it first.
+Payload = str | Mapping[str, Any] | Sequence[Any]
 
 
 class TaskMode(str, Enum):
@@ -75,12 +83,15 @@ class Perturbation:
 
     The estimator computes divergence between a node's output on ``original`` and its
     output on ``perturbed``; everything except the targeted ``axis`` (and its proxies)
-    is held fixed.
+    is held fixed. ``kind`` records whether this counterfactual edits an explicit attribute
+    or only a correlated proxy — the two are separate probes and are never merged, because
+    proxy bias (a model reacting to a zip code or sociolect) is a distinct, more insidious
+    signal than reacting to a stated attribute.
     """
 
     axis: Axis
-    original: str
-    perturbed: str
+    original: Payload
+    perturbed: Payload
     kind: PerturbationKind = PerturbationKind.EXPLICIT
 
     def __post_init__(self) -> None:
