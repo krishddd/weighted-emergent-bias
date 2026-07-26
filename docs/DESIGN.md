@@ -23,6 +23,38 @@ state propagate.
 
 ---
 
+## 0. Scope: what this detects — and what it does not
+
+This boundary is load-bearing and was made explicit after the 2026-07 external review (see
+[reviews/2026-07-external-review-response.md](reviews/2026-07-external-review-response.md)).
+
+The core detector is a **within-node counterfactual invariance test**. It runs a node on an
+input and again on a demographically perturbed twin of that input, and measures how much the
+node's *own* output distribution shifts, standardized against the node's *own* sampling-noise
+floor. The anchor is the node's unperturbed output — **not** the other agents' consensus.
+
+**Therefore WEB detects:** demographic / stereotype bias — a node treating an input
+differently because of a protected attribute or its proxies.
+
+**WEB does not detect:**
+
+- **Factual error.** A node can be perfectly invariant across demographics and still be
+  wrong. Catching that needs an external ground-truth anchor, which counterfactual probing
+  does not provide. It is offered only as an *optional injectable verifier* (see §8), never
+  asserted by the core.
+- **Consensus deviation.** WEB never flags a node for disagreeing with its peers. A lone
+  correct dissenter that answers identically across demographics scores at the noise floor.
+  This is deliberate: consensus-based flagging is exactly the "punish the correct minority"
+  failure the review warned about, and the counterfactual design sidesteps it by never
+  comparing a node to other nodes to compute `B_i`.
+- **Style drift** as a bias signal — it is a separate axis and is not conflated with the
+  demographic divergence measure.
+
+Keeping the claim this narrow is what makes it defensible: every part of the noise-floor
+apparatus supports *this* statement and no broader one.
+
+---
+
 ## 2. Gap analysis
 
 ### 2a. Genuinely novel engineering — build this carefully
@@ -277,3 +309,58 @@ workstream. Until it happens, the README makes no validated-performance claims.
 - How does the breaker behave on cyclic graphs? LangGraph permits cycles, at which point
   Katz's nilpotency guarantee disappears and the `α < 1/λ_max` constraint returns. Needs an
   explicit detection-and-fallback path before v0.3.
+- **Pre-Trigger Verification scope fork (pending user decision).** Should factual-error
+  verification be part of the core, or an optional injectable `Verifier` hook? Recommended:
+  optional hook, keeping the core claim counterfactual-only. See §8 and the review response.
+
+---
+
+## 8. Revisions from the 2026-07 external review
+
+A three-reviewer architecture review raised 14 gaps; the full point-by-point response,
+including two P0 items reframed as based on a consensus-detection misreading, is in
+[reviews/2026-07-external-review-response.md](reviews/2026-07-external-review-response.md).
+None required changes to shipped code (WP0/WP1). The accepted mechanism changes are recorded
+here against their owning module so they are not lost before those modules are built.
+
+**Detection (M1).** Scope boundary made explicit (§0): counterfactual invariance, not factual
+correctness or consensus deviation. Divergence measure formalization tracked in PHASE-1 R1.
+
+**Propagation (M2).**
+- **Bayesian error-history score** `P(biased | history_i)` as a *complement* to topological
+  `w_i`, not a replacement: topology gives blast radius, history gives base rate; both feed a
+  composite risk. (Addresses the minority-suppression critique at its real location — a node
+  is scrutinized on structure and track record, never penalized for dissent.)
+- **Multi-scale EWMA:** maintain a fast and a slow accumulator (distinct decay rates) so
+  sudden spikes and slow drift are caught simultaneously instead of traded off against one α.
+
+**Control (M3).**
+- **Two-threshold hysteresis** (`τ_enter` > `τ_exit`) plus a continuous mixing ratio replaces
+  the single binary `τ`, to stop breaker thrashing when `B_net` sits near the boundary.
+- **Edge-level interception:** trip on the edge *before* the downstream node consumes the
+  payload, not after the upstream node emits — otherwise the biased context has already
+  propagated by the time the breaker fires.
+- **Four-state machine** Normal → Warning → Intervention → Recovery, with transition guards, a
+  cool-down window, and a human-escalation escape condition. Defines the recovery/re-entry
+  protocol left unspecified in the source docs.
+- **Router self-monitoring:** the reroute node is itself probed and audited; it is not an
+  exempt, unmonitored amplifier.
+
+**Intervention (M4).**
+- Minority-suppression guardrails in trust-graph pruning: response anonymization and a
+  "never prune on divergence from consensus alone" rule, so a correct dissenter cannot be
+  silenced for dissenting.
+- Skeptic SPOF mitigation: require ≥2 skeptics of diverse provenance; the BYO-callable design
+  already avoids a single bundled agent.
+
+**Evidence (M5).**
+- Evaluation protocol: four-condition ablation (baseline → LOOC-only → LOOC+centrality → full
+  breaker) with bias reduction, accuracy, latency/step, intervention frequency, recovery rate,
+  and a reverse-bias symmetry check.
+- Per-failure-mode error budget (target FPR and missed-bias rate).
+- Observability: extend the SARIF trail with trigger reason, intervention path, and routing
+  entropy over time.
+
+**Cross-cutting.** Monitor independence (WP5): the probe may take an optional independent
+monitor client (different model family, read-only) so the monitor does not inherit the blind
+spots of the agent it watches.

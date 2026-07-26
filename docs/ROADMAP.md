@@ -24,10 +24,13 @@ something earlier is wrong, so the order is not negotiable.
 | # | Module | Owns | Ships as | Depends on |
 | --- | --- | --- | --- | --- |
 | **M1** | **Detection core** | Counterfactual perturbation, divergence estimation, per-node noise floor, significance testing, SDC priors | v0.1 | nothing (numpy only) |
-| **M2** | **Propagation model** | DAG protocol, transposed Katz centrality, dependency weights, bias-corrected EWMA, superstep reduction | v0.2 | M1 |
-| **M3** | **Control plane** | `CircuitBreaker`, payload freezing, bias-type classification, `BiasState`, LangGraph `Command()` halt/reroute | v0.3 | M1, M2 |
-| **M4** | **Intervention** | Skeptic panel + `Send()` fan-out, trust-graph pruning, anonymization, MADERA diagnose→retrieve→rewrite | v0.4 | M3 |
-| **M5** | **Evidence** | Append-only causal trail, SARIF 2.1.0 export, HTML/JSON run reports | v0.5 | M3, M4 |
+| **M2** | **Propagation model** | DAG protocol, transposed Katz centrality, Bayesian error-history score, composite dependency weights, multi-scale (fast+slow) bias-corrected EWMA, superstep reduction | v0.2 | M1 |
+| **M3** | **Control plane** | Two-threshold hysteresis breaker, edge-level interception, Normal→Warning→Intervention→Recovery state machine, router self-monitoring, payload freezing, `BiasState`, LangGraph `Command()` halt/reroute | v0.3 | M1, M2 |
+| **M4** | **Intervention** | Skeptic panel (≥2, diverse provenance) + `Send()` fan-out, trust-graph pruning with anonymization + no-prune-on-dissent guardrail, MADERA diagnose→retrieve→rewrite | v0.4 | M3 |
+| **M5** | **Evidence** | Append-only causal trail, extended SARIF 2.1.0 export (trigger reason, routing entropy), HTML/JSON reports, ablation evaluation protocol + error budget | v0.5 | M3, M4 |
+
+Mechanism additions in M2–M5 are banked from the 2026-07 external review — see
+[DESIGN.md §8](DESIGN.md) and [reviews/2026-07-external-review-response.md](reviews/2026-07-external-review-response.md).
 
 ## Why this order, and why M1 gets disproportionate effort
 

@@ -15,6 +15,12 @@ Two methods, matching the two task modes:
 A given deployment may only support one mode (many hosted chat APIs expose no logprobs, so
 ``score_candidates`` is unavailable); that limitation is discovered and recorded, never
 papered over.
+
+Monitor independence (WP5): a client used to *score* a node need not be the same client that
+*produced* the node's output. The probe (WP5) will accept an optional independent monitor
+client — ideally a different model family on a read-only channel — so the monitor does not
+inherit the exact blind spots of the agent it watches. These protocols are that seam; nothing
+here assumes one shared client.
 """
 
 from __future__ import annotations

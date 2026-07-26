@@ -14,6 +14,14 @@ score at the noise floor, and a model with a known injected bias must score abov
 monotonically in the injected magnitude. If we can only get one of those two, we have not
 finished Phase 1.
 
+**What "bias" means here (scope).** `B_i` measures **counterfactual demographic invariance** —
+how much a node's output shifts when only a protected attribute (or its proxy) changes,
+anchored to the node's *own* unperturbed output. It is not a factual-correctness signal and
+not a consensus-deviation signal: Phase 1 never compares a node to other nodes. This boundary
+(reaffirmed by the 2026-07 external review) is why the noise floor, not an external oracle, is
+the anchor — see [DESIGN.md §0](../DESIGN.md). Factual verification, if wanted, is an optional
+injectable hook decided at the architecture level, not part of this estimator.
+
 ---
 
 ## 1. Research questions to resolve before writing the estimator
