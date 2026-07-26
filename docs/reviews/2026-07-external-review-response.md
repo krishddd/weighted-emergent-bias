@@ -118,3 +118,53 @@ foreclosed.
   skeptic diversity requirement.
 - **M5 gains:** the ablation evaluation protocol, error budget, extended observability.
 - **One decision pending from the user:** the Pre-Trigger Verification scope fork.
+
+---
+
+## Addendum: concrete specifications received (detailed review pass)
+
+The reviewers supplied formulas and constants for each fix. Banked here verbatim-in-intent
+so the specifics survive to implementation. One correction is called out first because
+adopting the spec as written would be a bug.
+
+### Correction — Gap #1: the given "JS" formula is actually symmetrized KL
+
+The required fix writes:
+
+> `b_i(t) = ½·D_KL(P_base ‖ P_perturbed) + ½·D_KL(P_perturbed ‖ P_base)` … "symmetric
+> Jensen-Shannon divergence"
+
+That expression is the (scaled) **Jeffreys / symmetrized-KL divergence, not Jensen-Shannon.**
+It is **unbounded** and still blows up to ∞ on any zero-probability token — precisely the
+failure the reviewer cites as the reason to avoid KL. True Jensen-Shannon uses the mixture:
+
+```
+M      = ½ (P_base + P_perturbed)
+JSD    = ½ · D_KL(P_base ‖ M) + ½ · D_KL(P_perturbed ‖ M)
+```
+
+`JSD ∈ [0, log 2]` (→ `[0, 1]` in bits, log base 2), and is finite even on disjoint supports
+because `M` has mass wherever either input does. **We use true JSD** (already the design
+intent in PHASE-1 R1 and `DivergenceMethod.JENSEN_SHANNON`); the review's written formula is
+not adopted. The proposed token-level edit-distance posterior is banked as a WP3 secondary
+signal.
+
+### Banked concrete specs, by module
+
+| Gap | Concrete spec | Owner |
+|-----|---------------|-------|
+| 3 | Sigmoid mixer `α(t)=σ((S−τ)/κ)`, output `(1−α)·consensus + α·skeptic`; hysteresis `τ_enter > τ_exit`; calibrate τ, κ by sweep. | M3 |
+| 4 | `w_i(t) = P(biased | verified_error_history_i)`, errors confirmed by an *independent* verifier — complements topological `w_i`, does not replace it. | M2 |
+| 5 | `unverified_output` staging buffer in `BiasState`; breaker promotes (nominal) or replaces (breach) *before* the downstream node activates. | M3 |
+| 8 | Two-tier: Tier-1 cheap cosine/KL on all edges `O(N)`; Tier-2 full LOOC only on Tier-1-flagged, top-k% by centrality → `O(N) + O(k log k)`. Document the precision tradeoff of the sampling. | WP5/M2 |
+| 9 | Replace McKinsey `S` with normalized entropy `H(P)/log N` as the confidence term; cross-validate as an error predictor before trusting it. (Watch the sign: a temp-0 deterministic-but-correct agent must not be auto-suppressed.) | M4 |
+| 10 | Add routing-selection entropy over recent steps to the network EWMA; low entropy (orchestrator concentrating on agreeing agents) feeds the breaker independently of per-node scores. | M3 |
+| 11 | Two parallel EWMAs — `S_fast` (0.7·b + 0.3·prev, spikes) and `S_slow` (0.1·b + 0.9·prev, drift); trip on fast, drift-alert on slow; normalize both to [0,1] vs a max-entropy baseline. | M2 |
+| 12 | Error budget: LOOC FP < 0.05 (**Bonferroni/FDR across N nodes** — relevant to WP4 significance when aggregating), breaker false-trip < 0.01, skeptic over-correction < 0.01, MADERA retrieval failure < 0.001. | M5 |
+| 13 | Recovery guards: corrected output passes its *own* LOOC; EWMA cool-down before same-branch re-trigger; max-retry → human escalation. | M3 |
+| 14 | Four-condition ablation (baseline → LOOC-only → LOOC+centrality → full) + reverse-bias symmetry `E[S|A]=E[S|B]` via bootstrap CI. | M5 |
+
+**One item touches the detection layer being built now:** the Bonferroni/FDR multiple-comparison
+correction (Gap 12). Per-node significance is WP4; the *family-wise* correction applies when M2
+aggregates across many nodes. Noted so WP4's p-values are designed to be correctable, not
+consumed raw at the network level.
