@@ -303,7 +303,8 @@ workstream. Until it happens, the README makes no validated-performance claims.
 ## 7. Open questions
 
 - Which demographic axes ship as defaults, and does shipping a fixed list encode its own
-  bias? Leaning toward: no defaults, a required explicit config, and documented example sets.
+  bias? **Resolved (WP2):** no defaults — axes are a required explicit argument, with
+  illustrative sets documented in [example-axes.md](example-axes.md), not baked into code.
 - Should `B_net` be per-run or persist across runs to catch drift over a deployment's
   lifetime? Per-run for v0.x; cross-run is a separate telemetry concern.
 - How does the breaker behave on cyclic graphs? LangGraph permits cycles, at which point
