@@ -47,7 +47,9 @@ select = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+# No python_version pin: the CI matrix runs mypy under each interpreter
+# (3.10/3.11/3.12), so each job validates its own version. Pinning a single
+# target makes mypy misparse third-party stubs written for a newer runtime.
 strict = true
 warn_unreachable = true
 warn_redundant_casts = true
