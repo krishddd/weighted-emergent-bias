@@ -34,6 +34,34 @@ packages = ["src/weighted_emergent_bias"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+extend-exclude = ["docs", ".venv"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W",  # pycodestyle + pyflakes
+  "I",            # isort
+  "UP",           # pyupgrade
+  "B",            # bugbear
+  "SIM",          # simplify
+  "RUF",          # ruff-specific
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["networkx.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+  "slow: hits a real network / model provider; excluded from default run",
+]
