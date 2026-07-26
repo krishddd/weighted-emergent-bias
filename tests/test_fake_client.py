@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from weighted_emergent_bias.clients import EmbeddingClient, LLMClient
+from weighted_emergent_bias.clients import EmbeddingClient, FloatArray, LLMClient
 from weighted_emergent_bias.testing import FakeEmbeddingClient, FakeLLMClient
 from weighted_emergent_bias.testing import markers as mk
 
@@ -21,7 +21,7 @@ def _client(**kwargs: object) -> FakeLLMClient:
     return FakeLLMClient(np.random.default_rng(SEED), **kwargs)  # type: ignore[arg-type]
 
 
-async def _full_logits(client: FakeLLMClient, prompt: str) -> np.ndarray:
+async def _full_logits(client: FakeLLMClient, prompt: str) -> FloatArray:
     return await client.score_candidates(prompt, client.candidates)
 
 

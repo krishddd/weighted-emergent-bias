@@ -71,10 +71,11 @@ class FakeLLMClient:
         self._logit_noise = logit_noise
         self._bias: dict[str, float] = dict(bias or {})
 
+        self._base: FloatArray
         if base_logits is None:
             self._base = np.zeros(n_candidates, dtype=np.float64)
         else:
-            base = np.asarray(base_logits, dtype=np.float64)
+            base: FloatArray = np.asarray(base_logits, dtype=np.float64)
             if base.shape != (n_candidates,):
                 raise ValueError(f"base_logits must have shape ({n_candidates},), got {base.shape}")
             self._base = base
@@ -102,7 +103,7 @@ class FakeLLMClient:
         raise ValueError(f"unknown candidate {candidate!r}; expected one of {self.candidates}")
 
     def _logits(self, prompt: str, *, noisy: bool) -> FloatArray:
-        logits = self._base.copy()
+        logits: FloatArray = self._base.copy()
         state = markers.decode(prompt)
         for axis, value in state.items():
             if value == markers.REFERENCE_STATE:
