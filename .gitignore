@@ -12,3 +12,9 @@ venv/
 .coverage
 htmlcov/
 .DS_Store
+
+# Local source material — reference only, not distributed
+*.docx
+*.pdf
+NotebookLM*.png
+

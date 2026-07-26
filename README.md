@@ -72,11 +72,17 @@ DoT simulation harness.
 
 ## Roadmap
 
-- **v0.1** — single-node LOOC scoring with noise-floor separation, no graph dependency
-- **v0.2** — Katz topology weighting, EWMA accumulation, synthetic DoT simulation harness
-- **v0.3** — LangGraph `BiasState`, node instrumentation, `Command()` halt and reroute
-- **v0.4** — Skeptic panel with trust-graph pruning, MADERA repair pipeline
-- **v0.5** — causal audit trail, SARIF 2.1.0 export, HTML/JSON reporting
+The pipeline is built as five layered modules — see [docs/ROADMAP.md](docs/ROADMAP.md).
+
+| | Module | Ships as |
+| --- | --- | --- |
+| **M1** | Detection core — perturbation, divergence, noise floor, significance | v0.1 |
+| **M2** | Propagation — Katz weighting, EWMA accumulation | v0.2 |
+| **M3** | Control — circuit breaker, LangGraph halt/reroute | v0.3 |
+| **M4** | Intervention — skeptic panel, trust pruning, MADERA repair | v0.4 |
+| **M5** | Evidence — causal trail, SARIF export, reporting | v0.5 |
+
+M1 is in detailed planning: [docs/plans/PHASE-1.md](docs/plans/PHASE-1.md).
 
 ## License
 
