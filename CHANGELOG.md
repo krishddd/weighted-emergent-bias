@@ -9,6 +9,12 @@ All notable changes to this project are documented here. Format follows
 Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.0`.
 
 ### Added
+- **WP3 — Divergence estimators** (`scoring/divergence.py`): true Jensen-Shannon over a shared
+  candidate support (mixture-based, bounded `[0, 1]`, finite on disjoint supports where KL
+  would be ∞), `softmax`, `js_divergence_from_logits`, `cosine_distance` for the generative
+  path, a `raw_divergence` mode→method dispatcher, and `assert_same_estimator` to refuse
+  combining scores from different estimators. The review's symmetrized-KL "JS" formula is
+  explicitly not adopted (see module docstring and the disjoint-support test).
 - **WP2 — Perturbation engine** (`scoring/perturbation.py`): `perturb(payload, axes)` with
   `AxisSpec` / `Substitution`. Traverses nested payloads (dict/list/tuple), editing only
   string leaves with whole-word, case-preserving substitution. Explicit and proxy
@@ -27,6 +33,8 @@ Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.
 ### Changed
 - `Perturbation.original` / `.perturbed` generalized from `str` to the `Payload` alias to carry
   structured payloads (WP2).
+- `FloatArray` promoted from `clients.py` to `types.py` as its canonical home (WP3); `clients`
+  re-exports it for compatibility.
 
 ### Fixed
 - `mypy --strict` failures surfaced only on specific interpreters: a 3.12-only numpy stub

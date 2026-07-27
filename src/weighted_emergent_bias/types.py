@@ -22,6 +22,13 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+import numpy as np
+import numpy.typing as npt
+
+# The canonical numeric array type. Annotate numpy locals with this explicitly so mypy's
+# shape inference cannot narrow it differently across numpy stub versions (see CONTRIBUTING).
+FloatArray = npt.NDArray[np.float64]
+
 # Semantic aliases — these are just ``str`` at runtime, but they document intent.
 NodeId = str
 Axis = str

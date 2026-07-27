@@ -28,10 +28,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
-import numpy as np
-import numpy.typing as npt
+from .types import FloatArray
 
-FloatArray = npt.NDArray[np.float64]
+__all__ = ["EmbeddingClient", "FloatArray", "LLMClient"]
 
 
 @runtime_checkable
