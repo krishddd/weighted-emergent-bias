@@ -141,7 +141,7 @@ flowchart TD
 
 | | Module | Ships as | Status |
 | --- | --- | --- | --- |
-| **M1** | Detection core | v0.1 | 🟡 in progress — WP0–WP2 done (skeleton, types, client protocols, fake, perturbation); WP3–WP7 next |
+| **M1** | Detection core | v0.1 | 🟡 nearly complete — WP0–WP5 + WP7 done (perturbation, divergence, noise floor, probe, [calibration study](docs/studies/phase1-calibration.md)); WP6/SDC optional |
 | **M2** | Propagation — Katz weighting, multi-scale EWMA | v0.2 | ⚪ planned |
 | **M3** | Control — hysteresis breaker, state machine, LangGraph halt/reroute | v0.3 | ⚪ planned |
 | **M4** | Intervention — skeptic panel, trust pruning, MADERA | v0.4 | ⚪ planned |

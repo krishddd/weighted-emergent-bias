@@ -9,6 +9,14 @@ All notable changes to this project are documented here. Format follows
 Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.0`.
 
 ### Added
+- **WP7 — Phase 1 calibration study** (`studies/phase1_calibration.py`,
+  [docs/studies/phase1-calibration.md](docs/studies/phase1-calibration.md)): reproducible
+  five-experiment study — the first numbers this project owns. Detector is calibrated (null
+  p-values uniform, FPR tracks α across noise levels); detection floor ≈ β 1–2 at n=8; usable
+  sample budget n≥5 (n=3 has 0 power); CHOICE↔GENERATIVE agreement ρ≈0.56; and a **measured cost
+  multiplier of `n × (1 + axes)` = 10–32×**, correcting DESIGN's 3–6× estimate. Also surfaced
+  that effect size is n-dependent (a detection statistic, not a portable magnitude — an input to
+  M2). Optional `study` extra adds matplotlib for figures.
 - **WP5 — LOOCProbe orchestration** (`scoring/probe.py`): `LOOCProbe.run` resamples a node's
   output on the standard input and each perturbed input **concurrently** (`asyncio.gather`),
   feeds each pair to `compute_local_bias`, and returns a per-axis `ProbeResult`. One axis failing
