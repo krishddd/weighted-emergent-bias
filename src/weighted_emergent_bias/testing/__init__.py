@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from .dot_harness import DoTResult, chain_dag, simulate_dot
 from .fake import FakeEmbeddingClient, FakeLLMClient
+from .intervention import FakeSkeptic
 
 __all__ = [
     "DoTResult",
     "FakeEmbeddingClient",
     "FakeLLMClient",
+    "FakeSkeptic",
     "chain_dag",
     "simulate_dot",
 ]

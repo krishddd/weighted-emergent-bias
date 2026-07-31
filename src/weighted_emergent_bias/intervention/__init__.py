@@ -8,6 +8,14 @@ are M4. The default classifier here is an explicit heuristic, not a solved bias-
 from __future__ import annotations
 
 from .router import InterventionContext, InterventionStrategy, route_intervention
+from .skeptics import (
+    LLMSkeptic,
+    SkepticAgent,
+    SkepticPanel,
+    devils_advocate,
+    diversity_champion,
+    empirical_auditor,
+)
 from .types import (
     InterventionResult,
     PanelDecision,
@@ -22,11 +30,17 @@ __all__ = [
     "InterventionContext",
     "InterventionResult",
     "InterventionStrategy",
+    "LLMSkeptic",
     "PanelDecision",
     "PanelResult",
     "PrunedAgent",
+    "SkepticAgent",
+    "SkepticPanel",
     "SkepticStance",
     "SkepticVerdict",
     "TrustScore",
+    "devils_advocate",
+    "diversity_champion",
+    "empirical_auditor",
     "route_intervention",
 ]
