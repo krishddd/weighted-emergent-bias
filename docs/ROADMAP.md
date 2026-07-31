@@ -57,8 +57,8 @@ they are not risk.
 - **M2** — **shipped as v0.2.0.** Complete and characterized: [plans/PHASE-2.md](plans/PHASE-2.md),
   [propagation study](studies/phase2-propagation.md). DAG, transposed Katz, n-stable magnitude,
   composite weight, multi-scale accumulator, DoT harness.
-- **M3** — next up. Sketched in [DESIGN.md §8](DESIGN.md): two-threshold hysteresis breaker,
-  edge-level interception, Normal→Warning→Intervention→Recovery state machine, LangGraph adapter.
-  Detailed plan to be written at phase start.
+- **M3** — planned in detail: [plans/PHASE-3.md](plans/PHASE-3.md). In progress. Two-threshold
+  hysteresis breaker, edge-level interception, Normal→Warning→Intervention→Recovery state machine,
+  LangGraph adapter.
 - **M4–M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of each phase,
   not before; earlier phases will change what later ones need.
