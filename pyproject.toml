@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "weighted-emergent-bias"
-version = "0.3.0"
+version = "0.4.0"
 description = "A runtime circuit-breaker for the Degeneration-of-Thought (DoT) problem in multi-agent LLM systems."
 readme = "README.md"
 requires-python = ">=3.10"

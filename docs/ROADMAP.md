@@ -61,7 +61,8 @@ they are not risk.
   [control study](studies/phase3-control.md). Two-threshold hysteresis breaker, recovery state
   machine, threshold calibration, routing seam, and the LangGraph reference adapter (edge-level
   interception via a staging buffer).
-- **M4** — planned in detail: [plans/PHASE-4.md](plans/PHASE-4.md). In progress. Skeptic panel with
-  `Send` fan-out, trust graph (anonymization + no-prune-on-dissent), MADERA repair; plugs into the M3
-  intervention hook and `route_intervention` seam.
-- **M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of the phase.
+- **M4** — **shipped as v0.4.0.** Complete and characterized: [plans/PHASE-4.md](plans/PHASE-4.md),
+  [intervention study](studies/phase4-intervention.md). Skeptic panel (+ LangGraph `Send` fan-out),
+  trust graph (anonymized, no-prune-on-dissent), MADERA repair, and the runner wiring it into M3.
+- **M5** — next up. Sketched in [DESIGN.md](DESIGN.md): append-only causal audit trail, SARIF 2.1.0
+  export, HTML/JSON reporting. Detailed plan at phase start.

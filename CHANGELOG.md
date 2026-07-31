@@ -6,8 +6,29 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-Next: **M4 — Intervention** (skeptic panel + `Send` fan-out, trust-graph pruning, MADERA repair),
-plugging into the M3 intervention hook and routing seam.
+Next: **M5 — Evidence** (append-only causal audit trail, SARIF 2.1.0 export, HTML/JSON reporting).
+
+## [0.4.0] — 2026-07-31
+
+**M4 — Intervention.** Repairs a halted run instead of just stopping it: conformity spirals go to a
+parallel skeptic panel under a trust graph; entrenched parametric bias goes to a MADERA-style
+diagnose→retrieve→rewrite pipeline. Protocols + reference impls with injected callables — no vendor
+SDK. Characterized by the [Phase 4 study](docs/studies/phase4-intervention.md): trust-weighting
+recovers the correct dissenting output where uniform majority-voting fails (a conformity spiral), the
+minority is never pruned, MADERA converges, and a full halt→repair loop drops `B_net` 0.80→0.072.
+
+### Added
+- **M4 WP1 — intervention types**: `SkepticVerdict`, `PanelResult`, `TrustScore` (clamped `S`),
+  `InterventionResult`, stances/decisions.
+- **M4 WP2 — skeptic panel** (`intervention/skeptics.py`): `SkepticAgent` protocol + empirical /
+  devil's-advocate / diversity reference skeptics; `SkepticPanel` runs ≥2 distinct agents concurrently.
+- **M4 WP3 — trust graph** (`intervention/trust.py`): uniform (baseline) vs. trust weighting, with
+  overconfidence-only pruning and the **minority-suppression guarantee** (dissenters never pruned).
+- **M4 WP4 — MADERA** (`intervention/madera.py`): bounded, re-scored diagnose→retrieve→rewrite.
+- **M4 WP5 — runner** (`intervention/runner.py`): routes + runs a strategy; closes the M3→M4
+  halt→repair→recover loop.
+- **M4 WP6 — LangGraph `Send` fan-out** (`integrations/langgraph/skeptic_fanout.py`, optional).
+- **M4 WP7 — intervention study** ([report](docs/studies/phase4-intervention.md)).
 
 ## [0.3.0] — 2026-07-31
 

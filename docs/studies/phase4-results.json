@@ -1,0 +1,43 @@
+{
+  "ablation": {
+    "scenario": "overconfident biased majority (3) vs. evidence-backed dissenter (1)",
+    "uniform_decision": "stands",
+    "uniform_recovers_correct_output": false,
+    "trust_decision": "revised",
+    "trust_recovers_correct_output": true,
+    "trust_pruned": [
+      "majority_1",
+      "majority_2",
+      "majority_3"
+    ],
+    "dissenter_pruned_uniform": false,
+    "dissenter_pruned_trust": false
+  },
+  "madera_convergence": {
+    "rows": [
+      {
+        "beta": 0.3,
+        "converged": true,
+        "rewrites": 2
+      },
+      {
+        "beta": 0.5,
+        "converged": true,
+        "rewrites": 2
+      },
+      {
+        "beta": 0.8,
+        "converged": true,
+        "rewrites": 3
+      }
+    ]
+  },
+  "end_to_end": {
+    "b_net_before": 0.8,
+    "halt_state": "intervention",
+    "strategy": "madera",
+    "b_net_after": 0.072,
+    "recovered_state": "normal"
+  },
+  "runtime_seconds": 0.002552700000251207
+}

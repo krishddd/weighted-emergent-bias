@@ -6,13 +6,12 @@
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 ![Typing](https://img.shields.io/badge/mypy-strict-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-alpha%20v0.3-yellow)
+![Status](https://img.shields.io/badge/status-alpha%20v0.4-yellow)
 
-> **Status: alpha, v0.3.** Detection (M1), propagation (M2), and control (M3) are shipped: from a
-> prompt you can get a calibrated per-node bias score, weight it by graph blast radius, accumulate a
-> network-level signal, and halt/reroute deterministically with hysteresis + a recovery state machine
-> (LangGraph adapter included). Intervention/evidence (M4–M5) are next. This library makes **no
-> validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
+> **Status: alpha, v0.4.** Detection (M1), propagation (M2), control (M3), and intervention (M4) are
+> shipped: detect per-node bias, weight + accumulate it, halt/reroute with hysteresis + a recovery
+> machine, and repair via a skeptic panel (trust-graph pruning) or MADERA reasoning edits. Evidence
+> (M5) is next. This library makes **no validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
 
 ---
 
@@ -159,6 +158,14 @@ control runs (no magic constant). The optional
 and only promotes it once the breaker clears — so a biased payload never reaches the next node.
 See the [control study](docs/studies/phase3-control.md).
 
+Intervention (M4) repairs a halted run: a conformity spiral routes to a skeptic panel under a trust
+graph that prunes overconfident agents (but **never** a correct dissenter); entrenched parametric
+bias routes to a MADERA-style diagnose→retrieve→rewrite loop. Everything is protocol + reference
+implementation over an injected LLM callable. The `InterventionRunner` wires this into the M3
+recovery hook; because M3 re-measures `B_net`, a genuine repair drives the run back to Normal. See
+the [intervention study](docs/studies/phase4-intervention.md), where trust-weighting recovers the
+correct output that plain majority-voting loses.
+
 ## Roadmap
 
 Five layered modules — see [docs/ROADMAP.md](docs/ROADMAP.md). Each earlier module is a
@@ -169,7 +176,7 @@ flowchart TD
     M1["M1 · Detection core<br/>perturbation · divergence · noise floor"]:::done
     M2["M2 · Propagation<br/>Katz weight · multi-scale EWMA"]:::done
     M3["M3 · Control<br/>hysteresis breaker · state machine"]:::done
-    M4["M4 · Intervention<br/>skeptics · trust graph · MADERA"]:::todo
+    M4["M4 · Intervention<br/>skeptics · trust graph · MADERA"]:::done
     M5["M5 · Evidence<br/>audit trail · SARIF · reports"]:::todo
     M1 --> M2 --> M3 --> M4 --> M5
     M3 --> M5
@@ -182,11 +189,11 @@ flowchart TD
 | **M1** | Detection core — perturbation, divergence, noise floor, probe | v0.1 | ✅ shipped ([calibration study](docs/studies/phase1-calibration.md)) |
 | **M2** | Propagation — Katz weighting, multi-scale EWMA | v0.2 | ✅ shipped ([propagation study](docs/studies/phase2-propagation.md)) |
 | **M3** | Control — hysteresis breaker, recovery state machine, LangGraph adapter | v0.3 | ✅ shipped ([control study](docs/studies/phase3-control.md)) |
-| **M4** | Intervention — skeptic panel, trust pruning, MADERA | v0.4 | ⚪ planned |
+| **M4** | Intervention — skeptic panel, trust-graph pruning, MADERA | v0.4 | ✅ shipped ([intervention study](docs/studies/phase4-intervention.md)) |
 | **M5** | Evidence — causal trail, SARIF export, reporting | v0.5 | ⚪ planned |
 
 Module plans: [PHASE-1](docs/plans/PHASE-1.md), [PHASE-2](docs/plans/PHASE-2.md),
-[PHASE-3](docs/plans/PHASE-3.md). The 2026-07 external-review triage is in
+[PHASE-3](docs/plans/PHASE-3.md), [PHASE-4](docs/plans/PHASE-4.md). The 2026-07 external-review triage is in
 [docs/reviews/](docs/reviews/2026-07-external-review-response.md).
 
 ## Prior work, and what this does not claim
