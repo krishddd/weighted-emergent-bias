@@ -6,7 +6,15 @@ Pre-alpha. See docs/DESIGN.md and docs/plans/PHASE-1.md.
 from __future__ import annotations
 
 from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
-from .audit import AuditEvent, AuditKind, AuditTrail, to_sarif
+from .audit import (
+    AuditEvent,
+    AuditKind,
+    AuditTrail,
+    to_html,
+    to_json,
+    to_sarif,
+    trace_breach,
+)
 from .breaker import CircuitBreaker, ControlMachine, freeze
 from .calibration import ThresholdConfig, calibrate_thresholds
 from .clients import EmbeddingClient, LLMClient
@@ -107,5 +115,8 @@ __all__ = [
     "node_magnitude",
     "perturb",
     "route_intervention",
+    "to_html",
+    "to_json",
     "to_sarif",
+    "trace_breach",
 ]
