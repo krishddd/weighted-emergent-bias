@@ -7,6 +7,7 @@ are M4. The default classifier here is an explicit heuristic, not a solved bias-
 
 from __future__ import annotations
 
+from .madera import BiasScorer, Diagnoser, Editor, MaderaEditor, Retriever
 from .router import InterventionContext, InterventionStrategy, route_intervention
 from .skeptics import (
     LLMSkeptic,
@@ -28,13 +29,18 @@ from .types import (
 )
 
 __all__ = [
+    "BiasScorer",
+    "Diagnoser",
+    "Editor",
     "InterventionContext",
     "InterventionResult",
     "InterventionStrategy",
     "LLMSkeptic",
+    "MaderaEditor",
     "PanelDecision",
     "PanelResult",
     "PrunedAgent",
+    "Retriever",
     "SkepticAgent",
     "SkepticPanel",
     "SkepticStance",

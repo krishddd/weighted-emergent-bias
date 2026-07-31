@@ -9,13 +9,23 @@ from __future__ import annotations
 
 from .dot_harness import DoTResult, chain_dag, simulate_dot
 from .fake import FakeEmbeddingClient, FakeLLMClient
-from .intervention import FakeSkeptic
+from .intervention import (
+    DecayEditor,
+    FakeDiagnoser,
+    FakeRetriever,
+    FakeSkeptic,
+    bias_field_scorer,
+)
 
 __all__ = [
+    "DecayEditor",
     "DoTResult",
+    "FakeDiagnoser",
     "FakeEmbeddingClient",
     "FakeLLMClient",
+    "FakeRetriever",
     "FakeSkeptic",
+    "bias_field_scorer",
     "chain_dag",
     "simulate_dot",
 ]
