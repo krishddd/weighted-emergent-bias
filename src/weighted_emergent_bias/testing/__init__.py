@@ -7,6 +7,13 @@ the reference against which the estimator is calibrated (Phase 1 WP7).
 
 from __future__ import annotations
 
+from .dot_harness import DoTResult, chain_dag, simulate_dot
 from .fake import FakeEmbeddingClient, FakeLLMClient
 
-__all__ = ["FakeEmbeddingClient", "FakeLLMClient"]
+__all__ = [
+    "DoTResult",
+    "FakeEmbeddingClient",
+    "FakeLLMClient",
+    "chain_dag",
+    "simulate_dot",
+]
