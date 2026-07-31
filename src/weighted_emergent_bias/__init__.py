@@ -14,6 +14,7 @@ from .scoring import (
     compute_local_bias,
     perturb,
 )
+from .topology import AgentDAG
 from .types import (
     Axis,
     AxisFailure,
@@ -31,6 +32,7 @@ from .types import (
 __version__ = "0.1.0"
 
 __all__ = [
+    "AgentDAG",
     "Axis",
     "AxisFailure",
     "AxisScore",
