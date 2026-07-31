@@ -9,6 +9,12 @@ All notable changes to this project are documented here. Format follows
 Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.0`.
 
 ### Added
+- **WP5 — LOOCProbe orchestration** (`scoring/probe.py`): `LOOCProbe.run` resamples a node's
+  output on the standard input and each perturbed input **concurrently** (`asyncio.gather`),
+  feeds each pair to `compute_local_bias`, and returns a per-axis `ProbeResult`. One axis failing
+  is isolated and recorded in `failures`; a baseline failure is fatal (`ProbeError`). Supports
+  `CHOICE` and `GENERATIVE` modes. Resolves the deferred `ProbeResult` / `AxisScore` / `AxisFailure`
+  types (shape now dictated by the probe's data flow).
 - **WP4 — Noise floor** (`scoring/noise.py`): `compute_local_bias` turns resampled baseline /
   counterfactual representations into a calibrated `BiasScore` via a permutation test — the
   observed statistic and the null are the same quantity (divergence between group means), giving
@@ -44,6 +50,9 @@ Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.
   re-exports it for compatibility.
 
 ### Fixed
+- Jensen-Shannon divide-by-zero on denormal inputs: the mixture could underflow to 0.0 even
+  where `p > 0`, producing `inf`/`nan`. `_kl_bits` now clamps the mixture to the smallest positive
+  float in the log (a no-op for normal inputs). Found by a Hypothesis property test (WP5).
 - `mypy --strict` failures surfaced only on specific interpreters: a 3.12-only numpy stub
   syntax error (dropped the `python_version` pin so each matrix job validates its own version)
   and a 3.10-only ndarray shape-typing error (explicit `FloatArray` annotations).

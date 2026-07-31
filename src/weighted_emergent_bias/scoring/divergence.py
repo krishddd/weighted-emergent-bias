@@ -44,10 +44,13 @@ def _as_distribution(x: FloatArray | list[float]) -> FloatArray:
 
 
 def _kl_bits(p: FloatArray, m: FloatArray) -> float:
-    """KL(p ‖ m) in bits, with the 0·log0 = 0 convention. ``m`` is a mixture, so it has mass
-    wherever ``p`` does and no division-by-zero arises."""
+    """KL(p ‖ m) in bits, with the 0·log0 = 0 convention. ``m`` is a mixture, so mathematically
+    it has mass wherever ``p`` does; the ``maximum`` clamp only guards float underflow to 0.0 for
+    denormal inputs (where ``log2(0)`` would be -inf), and is a no-op otherwise."""
     mask = p > 0.0
-    return float(np.sum(p[mask] * (np.log2(p[mask]) - np.log2(m[mask]))))
+    p_masked = p[mask]
+    m_masked = np.maximum(m[mask], np.finfo(np.float64).tiny)
+    return float(np.sum(p_masked * (np.log2(p_masked) - np.log2(m_masked))))
 
 
 def softmax(logits: FloatArray | list[float]) -> FloatArray:

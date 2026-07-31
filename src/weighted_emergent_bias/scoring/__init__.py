@@ -12,9 +12,12 @@ from .divergence import (
 )
 from .noise import compute_local_bias
 from .perturbation import AxisSpec, Substitution, perturb
+from .probe import LOOCProbe, ProbeError
 
 __all__ = [
     "AxisSpec",
+    "LOOCProbe",
+    "ProbeError",
     "Substitution",
     "assert_same_estimator",
     "compute_local_bias",

@@ -159,3 +159,51 @@ class BiasScore:
         """True if the whole confidence interval sits above zero — a stricter,
         magnitude-based confidence signal than the p-value alone."""
         return self.ci_low > 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class AxisScore:
+    """A bias score for one (axis, kind) counterfactual, keeping the perturbation kind that
+    ``BiasScore`` alone does not carry (explicit attribute vs. proxy)."""
+
+    axis: Axis
+    kind: PerturbationKind
+    score: BiasScore
+
+
+@dataclass(frozen=True, slots=True)
+class AxisFailure:
+    """A probe that could not be scored for one (axis, kind) — recorded, never silently dropped."""
+
+    axis: Axis
+    kind: PerturbationKind
+    error: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProbeResult:
+    """The outcome of probing one node across its perturbation axes.
+
+    Scores are kept per (axis, kind) rather than collapsed — how to aggregate them (max across
+    axes is the safety-relevant default; see ``docs/plans/PHASE-1.md`` R3) is the consumer's
+    choice. Any axis that errored lands in ``failures`` with its reason, so a partial scan is
+    never mistaken for a complete one. ``n_client_calls`` is the number of LLM calls issued,
+    for cost accounting.
+    """
+
+    task_mode: TaskMode
+    n_samples: int
+    n_client_calls: int
+    scores: tuple[AxisScore, ...]
+    failures: tuple[AxisFailure, ...]
+
+    @property
+    def ok(self) -> bool:
+        """True if every axis was scored (no failures)."""
+        return not self.failures
+
+    def worst(self) -> AxisScore | None:
+        """The highest-effect-size axis score — the max-aggregation default. ``None`` if empty."""
+        if not self.scores:
+            return None
+        return max(self.scores, key=lambda a: a.score.effect_size)
