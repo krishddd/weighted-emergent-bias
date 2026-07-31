@@ -8,6 +8,7 @@ from __future__ import annotations
 from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
 from .breaker import CircuitBreaker, ControlMachine, freeze
 from .clients import EmbeddingClient, LLMClient
+from .intervention import InterventionContext, InterventionStrategy, route_intervention
 from .scoring import (
     AxisSpec,
     LOOCProbe,
@@ -50,6 +51,8 @@ __all__ = [
     "ControlMachine",
     "DivergenceMethod",
     "EmbeddingClient",
+    "InterventionContext",
+    "InterventionStrategy",
     "LLMClient",
     "LOOCProbe",
     "NetworkAccumulator",
@@ -70,4 +73,5 @@ __all__ = [
     "katz_weight",
     "node_magnitude",
     "perturb",
+    "route_intervention",
 ]
