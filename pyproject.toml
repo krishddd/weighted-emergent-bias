@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "weighted-emergent-bias"
-version = "0.0.0"
+version = "0.1.0"
 description = "A runtime circuit-breaker for the Degeneration-of-Thought (DoT) problem in multi-agent LLM systems."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,7 @@ license = "MIT"
 authors = [{ name = "Harish" }]
 keywords = ["llm", "multi-agent", "bias", "langgraph", "fairness", "circuit-breaker"]
 classifiers = [
-  "Development Status :: 1 - Planning",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",

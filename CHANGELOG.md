@@ -6,7 +6,16 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.0`.
+Next: **M2 — Propagation** (Katz weighting + multi-scale EWMA). See
+[docs/plans/PHASE-2.md](docs/plans/PHASE-2.md).
+
+## [0.1.0] — 2026-07-31
+
+**M1 — Detection core.** Single-node counterfactual bias detection, calibrated against its own
+sampling-noise floor, with no graph, framework, or vendor dependency. From a prompt + axes +
+client you get a per-axis, calibrated `BiasScore` via `LOOCProbe`. Characterized end-to-end by
+the [Phase 1 calibration study](docs/studies/phase1-calibration.md). No validated claims about
+real models — the estimator is proven correct on the ground-truth fake.
 
 ### Added
 - **WP7 — Phase 1 calibration study** (`studies/phase1_calibration.py`,
