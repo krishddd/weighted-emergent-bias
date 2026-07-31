@@ -64,5 +64,10 @@ they are not risk.
 - **M4** — **shipped as v0.4.0.** Complete and characterized: [plans/PHASE-4.md](plans/PHASE-4.md),
   [intervention study](studies/phase4-intervention.md). Skeptic panel (+ LangGraph `Send` fan-out),
   trust graph (anonymized, no-prune-on-dissent), MADERA repair, and the runner wiring it into M3.
-- **M5** — planned in detail: [plans/PHASE-5.md](plans/PHASE-5.md). In progress. Append-only causal
-  audit trail, SARIF 2.1.0 export (schema-validated), HTML/JSON reporting, breach trace-back.
+- **M5** — **shipped as v0.5.0.** Complete and characterized: [plans/PHASE-5.md](plans/PHASE-5.md),
+  [evidence study](studies/phase5-evidence.md). Append-only audit trail, SARIF 2.1.0 export
+  (schema-validated in CI), self-contained HTML/JSON reporting, breach trace-back.
+
+**All five modules are shipped.** The pipeline runs end to end: detect → weight + accumulate →
+control → intervene → audit. It remains demonstrated on the ground-truth fake, with no
+validated-performance claims on real models (benchmark reproduction is still unscheduled).

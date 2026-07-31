@@ -6,7 +6,25 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-Next: **M5 — Evidence** (append-only causal audit trail, SARIF 2.1.0 export, HTML/JSON reporting).
+All five milestones (M1–M5) are shipped. Possible future work: benchmark reproduction (still
+unscheduled), the optional pre-trigger `Verifier`, and richer error-history / router-entropy signals.
+
+## [0.5.0] — 2026-08-01
+
+**M5 — Evidence.** Makes every decision auditable: an append-only causal trail, SARIF 2.1.0 export
+(validated against the published schema in CI), and self-contained HTML/JSON reports with a breach
+trace-back. Characterized by the [Phase 5 study](docs/studies/phase5-evidence.md): a real M1→M5 run
+records a trail whose SARIF validates, and whose report traces the breach to the originating node and
+axis. **This completes the pipeline** — detect → weight/accumulate → control → intervene → audit —
+still with no validated-performance claims on real models.
+
+### Added
+- **M5 WP1 — audit trail** (`audit/trail.py`): append-only `AuditTrail` of monotonic-seq `AuditEvent`s
+  (wall-clock optional + injected), with recorders for `BiasScore` / `BreakerDecision` / `PanelResult`.
+- **M5 WP2 — SARIF export** (`audit/sarif.py`): `to_sarif` producing a SARIF 2.1.0 log, validated
+  against the bundled schema with `jsonschema` in CI.
+- **M5 WP3 — reporting** (`audit/report.py`): `to_json`, self-contained `to_html`, and `trace_breach`.
+- **M5 WP4 — evidence study** (`studies/phase5_audit.py`, [report](docs/studies/phase5-evidence.md)).
 
 ## [0.4.0] — 2026-07-31
 

@@ -1,0 +1,19 @@
+{
+  "n_events": 4,
+  "by_kind": {
+    "score": 2,
+    "breaker": 1,
+    "intervention": 1
+  },
+  "sarif_valid_2_1_0": true,
+  "sarif_result_count": 4,
+  "breach": {
+    "halt_seq": 2,
+    "reason": "intervention attempt 1",
+    "b_net": 0.24525895836392084,
+    "origin_node": "router",
+    "origin_axis": "gender",
+    "origin_effect_size": 12.041436039152345
+  },
+  "html_self_contained": true
+}

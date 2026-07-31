@@ -1,0 +1,130 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "weighted-emergent-bias",
+          "version": "0.0.0",
+          "informationUri": "https://github.com/krishddd/weighted-emergent-bias",
+          "rules": [
+            {
+              "id": "bias/gender",
+              "shortDescription": {
+                "text": "bias/gender"
+              }
+            },
+            {
+              "id": "breaker/reroute",
+              "shortDescription": {
+                "text": "breaker/reroute"
+              }
+            },
+            {
+              "id": "intervention",
+              "shortDescription": {
+                "text": "intervention"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "bias/gender",
+          "level": "warning",
+          "message": {
+            "text": "node 'router': counterfactual bias on axis 'gender' (effect 12.04, p=0.003)"
+          },
+          "properties": {
+            "axis": "gender",
+            "effect_size": 12.041436039152345,
+            "p_value": 0.0033222591362126247,
+            "method": "jensen_shannon",
+            "raw_divergence": 0.26780822377749114,
+            "null_mean": 0.022549265413570344,
+            "significant": true
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "name": "router"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "bias/gender",
+          "level": "note",
+          "message": {
+            "text": "node 'worker': counterfactual bias on axis 'gender' (effect -0.04, p=0.395)"
+          },
+          "properties": {
+            "axis": "gender",
+            "effect_size": -0.04328717817156906,
+            "p_value": 0.3953488372093023,
+            "method": "jensen_shannon",
+            "raw_divergence": 0.010856982405331683,
+            "null_mean": 0.01121955951828637,
+            "significant": false
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "name": "worker"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "breaker/reroute",
+          "level": "error",
+          "message": {
+            "text": "breaker intervention: intervention attempt 1"
+          },
+          "properties": {
+            "state": "intervention",
+            "action": "reroute",
+            "b_net": 0.24525895836392084,
+            "mixing_ratio": 0.9915319248503098,
+            "reason": "intervention attempt 1"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "name": "router"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "intervention",
+          "level": "note",
+          "message": {
+            "text": "intervention decision: None"
+          },
+          "properties": {
+            "strategy": "madera",
+            "converged": true
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "name": "router"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

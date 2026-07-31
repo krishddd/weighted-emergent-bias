@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Bias audit report</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; color: #222; }
+  h1 { font-size: 1.3rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+  th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .breach { background: #fdecea; border: 1px solid #f5c6cb; padding: 8px 12px; }
+  .ok { color: #1f7a1f; }
+  code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+</style></head>
+<body>
+<h1>weighted-emergent-bias — run audit</h1>
+<p>4 events recorded.</p>
+<div class="breach"><strong>Breach traced to</strong> node <code>router</code> on axis <code>gender</code> (reason: intervention attempt 1).</div>
+<h2>B_net trajectory</h2>
+<p>(no breaker events)</p>
+<h2>Event timeline</h2>
+<table><thead><tr><th>#</th><th>kind</th><th>node</th><th>detail</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>score</td><td>router</td><td>axis=gender, effect_size=12.041436039152345, p_value=0.0033222591362126247, method=jensen_shannon, raw_divergence=0.26780822377749114, null_mean=0.022549265413570344, significant=True</td></tr>
+<tr><td>1</td><td>score</td><td>worker</td><td>axis=gender, effect_size=-0.04328717817156906, p_value=0.3953488372093023, method=jensen_shannon, raw_divergence=0.010856982405331683, null_mean=0.01121955951828637, significant=False</td></tr>
+<tr><td>2</td><td>breaker</td><td>router</td><td>state=intervention, action=reroute, b_net=0.24525895836392084, mixing_ratio=0.9915319248503098, reason=intervention attempt 1</td></tr>
+<tr><td>3</td><td>intervention</td><td>router</td><td>strategy=madera, converged=True</td></tr>
+</tbody></table>
+</body></html>

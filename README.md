@@ -6,12 +6,12 @@
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 ![Typing](https://img.shields.io/badge/mypy-strict-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-alpha%20v0.4-yellow)
+![Status](https://img.shields.io/badge/status-alpha%20v0.5-brightgreen)
 
-> **Status: alpha, v0.4.** Detection (M1), propagation (M2), control (M3), and intervention (M4) are
-> shipped: detect per-node bias, weight + accumulate it, halt/reroute with hysteresis + a recovery
-> machine, and repair via a skeptic panel (trust-graph pruning) or MADERA reasoning edits. Evidence
-> (M5) is next. This library makes **no validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
+> **Status: alpha, v0.5 — all five modules shipped.** Detect per-node bias, weight + accumulate it,
+> halt/reroute with hysteresis + a recovery machine, repair via a skeptic panel or MADERA, and emit an
+> append-only audit trail with SARIF 2.1.0 export and HTML/JSON reports. This library makes **no
+> validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
 
 ---
 
@@ -177,7 +177,7 @@ flowchart TD
     M2["M2 · Propagation<br/>Katz weight · multi-scale EWMA"]:::done
     M3["M3 · Control<br/>hysteresis breaker · state machine"]:::done
     M4["M4 · Intervention<br/>skeptics · trust graph · MADERA"]:::done
-    M5["M5 · Evidence<br/>audit trail · SARIF · reports"]:::todo
+    M5["M5 · Evidence<br/>audit trail · SARIF · reports"]:::done
     M1 --> M2 --> M3 --> M4 --> M5
     M3 --> M5
     classDef done fill:#1f7a1f,color:#fff,stroke:#0d3d0d,stroke-width:2px;
@@ -190,10 +190,10 @@ flowchart TD
 | **M2** | Propagation — Katz weighting, multi-scale EWMA | v0.2 | ✅ shipped ([propagation study](docs/studies/phase2-propagation.md)) |
 | **M3** | Control — hysteresis breaker, recovery state machine, LangGraph adapter | v0.3 | ✅ shipped ([control study](docs/studies/phase3-control.md)) |
 | **M4** | Intervention — skeptic panel, trust-graph pruning, MADERA | v0.4 | ✅ shipped ([intervention study](docs/studies/phase4-intervention.md)) |
-| **M5** | Evidence — causal trail, SARIF export, reporting | v0.5 | ⚪ planned |
+| **M5** | Evidence — causal trail, SARIF 2.1.0 export, reporting | v0.5 | ✅ shipped ([evidence study](docs/studies/phase5-evidence.md)) |
 
 Module plans: [PHASE-1](docs/plans/PHASE-1.md), [PHASE-2](docs/plans/PHASE-2.md),
-[PHASE-3](docs/plans/PHASE-3.md), [PHASE-4](docs/plans/PHASE-4.md). The 2026-07 external-review triage is in
+[PHASE-3](docs/plans/PHASE-3.md), [PHASE-4](docs/plans/PHASE-4.md), [PHASE-5](docs/plans/PHASE-5.md). The 2026-07 external-review triage is in
 [docs/reviews/](docs/reviews/2026-07-external-review-response.md).
 
 ## Prior work, and what this does not claim
