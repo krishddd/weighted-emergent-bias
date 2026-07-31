@@ -9,7 +9,17 @@ from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
 from .breaker import CircuitBreaker, ControlMachine, freeze
 from .calibration import ThresholdConfig, calibrate_thresholds
 from .clients import EmbeddingClient, LLMClient
-from .intervention import InterventionContext, InterventionStrategy, route_intervention
+from .intervention import (
+    InterventionContext,
+    InterventionResult,
+    InterventionStrategy,
+    PanelDecision,
+    PanelResult,
+    SkepticStance,
+    SkepticVerdict,
+    TrustScore,
+    route_intervention,
+)
 from .scoring import (
     AxisSpec,
     LOOCProbe,
@@ -53,20 +63,26 @@ __all__ = [
     "DivergenceMethod",
     "EmbeddingClient",
     "InterventionContext",
+    "InterventionResult",
     "InterventionStrategy",
     "LLMClient",
     "LOOCProbe",
     "NetworkAccumulator",
     "NetworkState",
     "NodeId",
+    "PanelDecision",
+    "PanelResult",
     "Payload",
     "Perturbation",
     "PerturbationKind",
     "ProbeError",
     "ProbeResult",
+    "SkepticStance",
+    "SkepticVerdict",
     "Substitution",
     "TaskMode",
     "ThresholdConfig",
+    "TrustScore",
     "WeightResult",
     "__version__",
     "calibrate_thresholds",
