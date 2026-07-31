@@ -1,0 +1,61 @@
+{
+  "hysteresis_vs_binary": {
+    "trajectory": [
+      0.02,
+      0.08,
+      0.18,
+      0.32,
+      0.3,
+      0.3504882590884738,
+      0.3545578456095409,
+      0.308467200483592,
+      0.2545918502815243,
+      0.24246454352021168,
+      0.2832350701080644,
+      0.3394191959231273,
+      0.35936149479740287,
+      0.32472710911450536,
+      0.2673587333466378,
+      0.24000058760695778,
+      0.2678056249199739,
+      0.32521002220959844,
+      0.3594364413416922,
+      0.339017270409427,
+      0.2,
+      0.12,
+      0.05,
+      0.02
+    ],
+    "tau_enter": 0.3,
+    "tau_exit": 0.15,
+    "hysteresis_entries": 1,
+    "binary_entries": 3
+  },
+  "lifecycle": {
+    "recovering_states": [
+      "normal",
+      "intervention",
+      "recovery",
+      "normal",
+      "normal",
+      "normal"
+    ],
+    "persistent_states": [
+      "normal",
+      "intervention",
+      "recovery",
+      "intervention",
+      "recovery",
+      "escalated",
+      "escalated",
+      "escalated"
+    ]
+  },
+  "calibration": {
+    "target_false_halt_rate": 0.02,
+    "tau_enter": 0.9792477780144243,
+    "tau_exit": 0.685473444610097,
+    "achieved_false_halt_rate": 0.02085
+  },
+  "runtime_seconds": 0.05316120000043156
+}

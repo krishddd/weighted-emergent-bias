@@ -57,8 +57,11 @@ they are not risk.
 - **M2** — **shipped as v0.2.0.** Complete and characterized: [plans/PHASE-2.md](plans/PHASE-2.md),
   [propagation study](studies/phase2-propagation.md). DAG, transposed Katz, n-stable magnitude,
   composite weight, multi-scale accumulator, DoT harness.
-- **M3** — planned in detail: [plans/PHASE-3.md](plans/PHASE-3.md). In progress. Two-threshold
-  hysteresis breaker, edge-level interception, Normal→Warning→Intervention→Recovery state machine,
-  LangGraph adapter.
-- **M4–M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of each phase,
-  not before; earlier phases will change what later ones need.
+- **M3** — **shipped as v0.3.0.** Complete and characterized: [plans/PHASE-3.md](plans/PHASE-3.md),
+  [control study](studies/phase3-control.md). Two-threshold hysteresis breaker, recovery state
+  machine, threshold calibration, routing seam, and the LangGraph reference adapter (edge-level
+  interception via a staging buffer).
+- **M4** — next up. Sketched in [DESIGN.md](DESIGN.md): skeptic panel with `Send` fan-out, trust
+  graph with anonymization + no-prune-on-dissent, MADERA repair. Plugs into the M3 intervention hook
+  and `route_intervention` seam. Detailed plan at phase start.
+- **M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of the phase.

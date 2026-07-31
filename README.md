@@ -6,11 +6,12 @@
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 ![Typing](https://img.shields.io/badge/mypy-strict-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-alpha%20v0.2-yellow)
+![Status](https://img.shields.io/badge/status-alpha%20v0.3-yellow)
 
-> **Status: alpha, v0.2.** Detection (M1) and propagation (M2) are shipped: from a prompt you can
-> get a calibrated per-node bias score, weight it by graph blast radius, and accumulate a
-> network-level signal. Control/intervention/evidence (M3–M5) are next. This library makes **no
+> **Status: alpha, v0.3.** Detection (M1), propagation (M2), and control (M3) are shipped: from a
+> prompt you can get a calibrated per-node bias score, weight it by graph blast radius, accumulate a
+> network-level signal, and halt/reroute deterministically with hysteresis + a recovery state machine
+> (LangGraph adapter included). Intervention/evidence (M4–M5) are next. This library makes **no
 > validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
 
 ---
@@ -140,6 +141,24 @@ The end-to-end detect→weight→accumulate path is exercised by the
 [DoT simulation harness](src/weighted_emergent_bias/testing/dot_harness.py); results are in the
 [propagation study](docs/studies/phase2-propagation.md).
 
+Control (M3) halts deterministically on breach, with hysteresis to avoid thrashing and a recovery
+state machine:
+
+```python
+from weighted_emergent_bias import CircuitBreaker, ControlMachine
+
+machine = ControlMachine(CircuitBreaker(tau_enter=0.3, tau_exit=0.15))
+decision = machine.step(fast=0.5, slow=0.1)  # a spike above tau_enter
+print(decision.action, decision.state)  # BreakerAction.REROUTE BreakerState.INTERVENTION
+```
+
+The breaker trips once and stays tripped until `B_net` falls below the lower `tau_exit`; a
+persistent breach escalates instead of looping. Thresholds come from `calibrate_thresholds` on
+control runs (no magic constant). The optional
+[LangGraph adapter](src/weighted_emergent_bias/integrations/langgraph/) stages each node's output
+and only promotes it once the breaker clears — so a biased payload never reaches the next node.
+See the [control study](docs/studies/phase3-control.md).
+
 ## Roadmap
 
 Five layered modules — see [docs/ROADMAP.md](docs/ROADMAP.md). Each earlier module is a
@@ -149,7 +168,7 @@ number the later ones transform, so the order is not negotiable and M1 carries t
 flowchart TD
     M1["M1 · Detection core<br/>perturbation · divergence · noise floor"]:::done
     M2["M2 · Propagation<br/>Katz weight · multi-scale EWMA"]:::done
-    M3["M3 · Control<br/>hysteresis breaker · state machine"]:::todo
+    M3["M3 · Control<br/>hysteresis breaker · state machine"]:::done
     M4["M4 · Intervention<br/>skeptics · trust graph · MADERA"]:::todo
     M5["M5 · Evidence<br/>audit trail · SARIF · reports"]:::todo
     M1 --> M2 --> M3 --> M4 --> M5
@@ -162,12 +181,13 @@ flowchart TD
 | --- | --- | --- | --- |
 | **M1** | Detection core — perturbation, divergence, noise floor, probe | v0.1 | ✅ shipped ([calibration study](docs/studies/phase1-calibration.md)) |
 | **M2** | Propagation — Katz weighting, multi-scale EWMA | v0.2 | ✅ shipped ([propagation study](docs/studies/phase2-propagation.md)) |
-| **M3** | Control — hysteresis breaker, state machine, LangGraph halt/reroute | v0.3 | ⚪ planned |
+| **M3** | Control — hysteresis breaker, recovery state machine, LangGraph adapter | v0.3 | ✅ shipped ([control study](docs/studies/phase3-control.md)) |
 | **M4** | Intervention — skeptic panel, trust pruning, MADERA | v0.4 | ⚪ planned |
 | **M5** | Evidence — causal trail, SARIF export, reporting | v0.5 | ⚪ planned |
 
-Module plans: [PHASE-1](docs/plans/PHASE-1.md), [PHASE-2](docs/plans/PHASE-2.md). The 2026-07
-external-review triage is in [docs/reviews/](docs/reviews/2026-07-external-review-response.md).
+Module plans: [PHASE-1](docs/plans/PHASE-1.md), [PHASE-2](docs/plans/PHASE-2.md),
+[PHASE-3](docs/plans/PHASE-3.md). The 2026-07 external-review triage is in
+[docs/reviews/](docs/reviews/2026-07-external-review-response.md).
 
 ## Prior work, and what this does not claim
 

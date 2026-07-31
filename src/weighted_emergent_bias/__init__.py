@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
 from .breaker import CircuitBreaker, ControlMachine, freeze
+from .calibration import ThresholdConfig, calibrate_thresholds
 from .clients import EmbeddingClient, LLMClient
 from .intervention import InterventionContext, InterventionStrategy, route_intervention
 from .scoring import (
@@ -35,7 +36,7 @@ from .types import (
     TaskMode,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "AgentDAG",
@@ -65,8 +66,10 @@ __all__ = [
     "ProbeResult",
     "Substitution",
     "TaskMode",
+    "ThresholdConfig",
     "WeightResult",
     "__version__",
+    "calibrate_thresholds",
     "compute_local_bias",
     "dependency_weights",
     "freeze",

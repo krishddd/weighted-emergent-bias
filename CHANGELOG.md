@@ -6,8 +6,33 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-Next: **M3 — Control** (two-threshold hysteresis breaker, recovery state machine, LangGraph
-adapter). See [docs/DESIGN.md §8](docs/DESIGN.md).
+Next: **M4 — Intervention** (skeptic panel + `Send` fan-out, trust-graph pruning, MADERA repair),
+plugging into the M3 intervention hook and routing seam.
+
+## [0.3.0] — 2026-07-31
+
+**M3 — Control.** A deterministic control plane over `B_net`: halt, freeze, and reroute on breach,
+with hysteresis to prevent thrashing and a recovery state machine. Characterized by the
+[Phase 3 control study](docs/studies/phase3-control.md): hysteresis enters Intervention once where a
+binary threshold flips 3× on the same near-boundary trajectory; the machine recovers on a clearing
+spike and escalates on a persistent one; calibration hits its target false-halt rate. Still no
+validated claims about real models.
+
+### Added
+- **M3 WP1 — control types**: `BreakerState`, `BreakerAction`, `BreakerDecision` (discrete action +
+  advisory sigmoid `mixing_ratio` + recoverable `frozen_payload`).
+- **M3 WP2/WP3 — `breaker.py`**: `CircuitBreaker` (two-threshold hysteresis + mixing ratio, anti-
+  thrash) and `ControlMachine` (Normal→Warning→Intervention→Recovery, cool-down, `max_retries`→
+  Escalated, injectable intervention hook); `freeze` for payload snapshots. Pure, framework-free.
+- **M3 WP4 — `route_intervention`** (`intervention/router.py`): breadth-based routing seam
+  (broad→skeptics, concentrated→MADERA); a documented heuristic for M4 to refine.
+- **M3 WP5 — LangGraph reference adapter** (`integrations/langgraph/`): `BiasState` with a staging
+  buffer, `guarded_node`, and a `Command`-based breaker node giving edge-level interception (a biased
+  payload is frozen, never promoted to `committed`). Optional; not imported by the core; tests behind
+  `importorskip`.
+- **M3 WP6 — `calibrate_thresholds`** (`calibration.py`): pick `tau` from control-run percentiles at
+  a target false-halt rate — no magic constant.
+- **M3 WP7 — control study** (`studies/phase3_control.py`, [report](docs/studies/phase3-control.md)).
 
 ## [0.2.0] — 2026-07-31
 
