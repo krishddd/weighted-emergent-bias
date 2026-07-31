@@ -6,6 +6,7 @@ Pre-alpha. See docs/DESIGN.md and docs/plans/PHASE-1.md.
 from __future__ import annotations
 
 from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
+from .audit import AuditEvent, AuditKind, AuditTrail
 from .breaker import CircuitBreaker, ControlMachine, freeze
 from .calibration import ThresholdConfig, calibrate_thresholds
 from .clients import EmbeddingClient, LLMClient
@@ -55,6 +56,9 @@ __version__ = "0.4.0"
 
 __all__ = [
     "AgentDAG",
+    "AuditEvent",
+    "AuditKind",
+    "AuditTrail",
     "Axis",
     "AxisFailure",
     "AxisScore",
