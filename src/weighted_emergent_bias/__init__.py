@@ -14,7 +14,7 @@ from .scoring import (
     compute_local_bias,
     perturb,
 )
-from .topology import AgentDAG
+from .topology import AgentDAG, WeightResult, dependency_weights, katz_weight
 from .types import (
     Axis,
     AxisFailure,
@@ -50,7 +50,10 @@ __all__ = [
     "ProbeResult",
     "Substitution",
     "TaskMode",
+    "WeightResult",
     "__version__",
     "compute_local_bias",
+    "dependency_weights",
+    "katz_weight",
     "perturb",
 ]
