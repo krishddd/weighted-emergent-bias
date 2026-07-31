@@ -6,8 +6,22 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-All five milestones (M1–M5) are shipped. Possible future work: benchmark reproduction (still
-unscheduled), the optional pre-trigger `Verifier`, and richer error-history / router-entropy signals.
+### Added
+- **Optional pre-trigger `Verifier`** (`intervention/verifier.py`): the scope fork decided in the
+  2026-07 review, now built. Opt-in and un-imported by the core; keeps *counterfactual bias* and
+  *factual error* as separate signals rather than blending them. `UNVERIFIED` never blocks — an
+  oracle that reached no conclusion is not evidence of error.
+- **Real-model adapter + validation harness** (`integrations/anthropic_client.py`,
+  `studies/validate_real_model.py`, optional `[anthropic]` extra): makes real-model validation one
+  command once an API key is supplied. Never runs in CI; makes billable calls.
+  **Resolves Phase 1 spike S1** — the Anthropic Messages API exposes no token logprobs, so
+  `TaskMode.CHOICE` is unreachable analytically; the adapter recovers it by Monte Carlo (one-hot
+  draws whose group mean is the empirical distribution), at the cost of needing a larger `n`.
+
+### Still not claimed
+Benchmark reproduction remains unscheduled, and **no validated-performance claim on real models has
+been made** — the harness exists, but until someone runs it and publishes numbers the claim stays
+"demonstrated on the ground-truth fake". A single run is evidence, not validation.
 
 ## [0.5.0] — 2026-08-01
 

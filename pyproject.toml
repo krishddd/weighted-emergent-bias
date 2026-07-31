@@ -33,6 +33,8 @@ dev = [
 ]
 # Plotting for the Phase 1 calibration study; the study runs without it (plots are skipped).
 study = ["matplotlib>=3.7"]
+# Real-model validation harness (studies/validate_real_model.py). Never used by the core or CI.
+anthropic = ["anthropic>=0.40"]
 
 [project.urls]
 Homepage = "https://github.com/krishddd/weighted-emergent-bias"
@@ -67,7 +69,7 @@ warn_unused_ignores = true
 files = ["src", "tests", "studies"]
 
 [[tool.mypy.overrides]]
-module = ["networkx.*", "matplotlib.*", "langgraph.*", "jsonschema.*"]
+module = ["networkx.*", "matplotlib.*", "langgraph.*", "jsonschema.*", "anthropic.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
