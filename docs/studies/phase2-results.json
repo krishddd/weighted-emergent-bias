@@ -1,0 +1,61 @@
+{
+  "config": {
+    "beta": 3.0,
+    "n_samples": 8,
+    "n_permutations": 300
+  },
+  "central_vs_leaf": {
+    "central_node": "hub",
+    "leaf_node": "w1",
+    "central_weight": 0.3157894736842105,
+    "leaf_weight": 0.10526315789473684,
+    "central_fast": [
+      0.0,
+      0.10225738544652652,
+      0.16026028692776456
+    ],
+    "leaf_fast": [
+      0.0,
+      0.04323168329371937,
+      0.027611843315034492
+    ],
+    "central_final": 0.16026028692776456,
+    "leaf_final": 0.027611843315034492,
+    "ratio": 5.804041588216015
+  },
+  "bnet_vs_centrality": {
+    "rows": [
+      {
+        "seed": "w1",
+        "katz_weight": 0.10526315789473684,
+        "downstream_reach": 0,
+        "bnet_final": 0.027611843315034492
+      },
+      {
+        "seed": "hub",
+        "katz_weight": 0.3157894736842105,
+        "downstream_reach": 4,
+        "bnet_final": 0.22043028329833833
+      },
+      {
+        "seed": "root",
+        "katz_weight": 0.2631578947368421,
+        "downstream_reach": 5,
+        "bnet_final": 0.3350279230524204
+      }
+    ]
+  },
+  "fast_vs_slow": {
+    "fast": [
+      0.0,
+      0.10225738544652652,
+      0.16026028692776456
+    ],
+    "slow": [
+      0.0,
+      0.06996557951604447,
+      0.11163194076674668
+    ]
+  },
+  "runtime_seconds": 5.899493599999914
+}
