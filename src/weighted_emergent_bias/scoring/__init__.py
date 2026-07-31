@@ -10,12 +10,14 @@ from .divergence import (
     raw_divergence,
     softmax,
 )
+from .noise import compute_local_bias
 from .perturbation import AxisSpec, Substitution, perturb
 
 __all__ = [
     "AxisSpec",
     "Substitution",
     "assert_same_estimator",
+    "compute_local_bias",
     "cosine_distance",
     "jensen_shannon",
     "js_divergence_from_logits",

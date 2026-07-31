@@ -6,7 +6,7 @@ Pre-alpha. See docs/DESIGN.md and docs/plans/PHASE-1.md.
 from __future__ import annotations
 
 from .clients import EmbeddingClient, LLMClient
-from .scoring import AxisSpec, Substitution, perturb
+from .scoring import AxisSpec, Substitution, compute_local_bias, perturb
 from .types import (
     Axis,
     BiasScore,
@@ -34,5 +34,6 @@ __all__ = [
     "Substitution",
     "TaskMode",
     "__version__",
+    "compute_local_bias",
     "perturb",
 ]

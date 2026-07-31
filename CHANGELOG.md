@@ -9,6 +9,13 @@ All notable changes to this project are documented here. Format follows
 Building **M1 — Detection core (v0.1)**. Nothing released yet; `version = 0.0.0`.
 
 ### Added
+- **WP4 — Noise floor** (`scoring/noise.py`): `compute_local_bias` turns resampled baseline /
+  counterfactual representations into a calibrated `BiasScore` via a permutation test — the
+  observed statistic and the null are the same quantity (divergence between group means), giving
+  proper false-positive control. Reports a standardized effect size, a one-sided permutation
+  p-value, a bootstrap CI, and a deterministic-node path. **Calibration gate met:** false-positive
+  rate within tolerance of α = 0.05 over 200 unbiased simulated nodes. `compute_local_bias` is now
+  the top-level public entry point.
 - **WP3 — Divergence estimators** (`scoring/divergence.py`): true Jensen-Shannon over a shared
   candidate support (mixture-based, bounded `[0, 1]`, finite on disjoint supports where KL
   would be ∞), `softmax`, `js_divergence_from_logits`, `cosine_distance` for the generative
