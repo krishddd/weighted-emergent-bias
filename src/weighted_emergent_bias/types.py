@@ -207,3 +207,65 @@ class ProbeResult:
         if not self.scores:
             return None
         return max(self.scores, key=lambda a: a.score.effect_size)
+
+
+class BreakerState(str, Enum):
+    """The control plane's state (M3). Transitions live in the control state machine."""
+
+    NORMAL = "normal"
+    """Bias below thresholds; the run proceeds untouched."""
+
+    WARNING = "warning"
+    """Slow-scale drift crossed its threshold; observe, do not yet halt."""
+
+    INTERVENTION = "intervention"
+    """Fast-scale bias crossed the enter threshold; the run is halted and rerouted for repair."""
+
+    RECOVERY = "recovery"
+    """A mitigation ran; awaiting cool-down and a passing re-check before returning to normal."""
+
+    ESCALATED = "escalated"
+    """Repeated repair attempts failed; terminal, handed to human review."""
+
+
+class BreakerAction(str, Enum):
+    """The concrete, deterministic action a :class:`BreakerDecision` directs."""
+
+    PROCEED = "proceed"
+    """Promote the node's output and continue."""
+
+    HALT = "halt"
+    """Freeze the compromised payload; stop before the downstream node consumes it."""
+
+    REROUTE = "reroute"
+    """Halt and hand control to the mitigation subgraph."""
+
+    ESCALATE = "escalate"
+    """Give up automated repair and route to human review."""
+
+
+@dataclass(frozen=True, slots=True)
+class BreakerDecision:
+    """The outcome of one breaker check: a deterministic action plus advisory severity.
+
+    ``action`` is discrete on purpose — a control plane must be predictable. ``mixing_ratio`` is the
+    smooth ``sigmoid((B_net - tau_enter)/kappa)`` severity in ``[0, 1]``; M3 computes it, M4 may use
+    it to blend consensus vs. skeptic output. ``frozen_payload`` holds the compromised state when
+    the run is halted, so it is recoverable and auditable.
+    """
+
+    state: BreakerState
+    action: BreakerAction
+    mixing_ratio: float
+    b_net: float
+    reason: str
+    frozen_payload: Payload | None = None
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.mixing_ratio <= 1.0:
+            raise ValueError(f"mixing_ratio must be in [0, 1], got {self.mixing_ratio}")
+
+    @property
+    def halted(self) -> bool:
+        """True if this decision stops the run (halt, reroute, or escalate)."""
+        return self.action is not BreakerAction.PROCEED
