@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from .madera import BiasScorer, Diagnoser, Editor, MaderaEditor, Retriever
 from .router import InterventionContext, InterventionStrategy, route_intervention
+from .runner import InterventionRunner
 from .skeptics import (
     LLMSkeptic,
     SkepticAgent,
@@ -34,6 +35,7 @@ __all__ = [
     "Editor",
     "InterventionContext",
     "InterventionResult",
+    "InterventionRunner",
     "InterventionStrategy",
     "LLMSkeptic",
     "MaderaEditor",

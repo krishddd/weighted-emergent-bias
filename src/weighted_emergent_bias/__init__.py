@@ -12,6 +12,7 @@ from .clients import EmbeddingClient, LLMClient
 from .intervention import (
     InterventionContext,
     InterventionResult,
+    InterventionRunner,
     InterventionStrategy,
     MaderaEditor,
     PanelDecision,
@@ -68,6 +69,7 @@ __all__ = [
     "EmbeddingClient",
     "InterventionContext",
     "InterventionResult",
+    "InterventionRunner",
     "InterventionStrategy",
     "LLMClient",
     "LOOCProbe",
