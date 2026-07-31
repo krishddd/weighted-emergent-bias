@@ -19,6 +19,7 @@ from .intervention import (
     SkepticPanel,
     SkepticStance,
     SkepticVerdict,
+    TrustGraph,
     TrustScore,
     route_intervention,
 )
@@ -86,6 +87,7 @@ __all__ = [
     "Substitution",
     "TaskMode",
     "ThresholdConfig",
+    "TrustGraph",
     "TrustScore",
     "WeightResult",
     "__version__",

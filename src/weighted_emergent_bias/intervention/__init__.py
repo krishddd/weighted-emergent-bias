@@ -16,6 +16,7 @@ from .skeptics import (
     diversity_champion,
     empirical_auditor,
 )
+from .trust import TrustGraph
 from .types import (
     InterventionResult,
     PanelDecision,
@@ -38,6 +39,7 @@ __all__ = [
     "SkepticPanel",
     "SkepticStance",
     "SkepticVerdict",
+    "TrustGraph",
     "TrustScore",
     "devils_advocate",
     "diversity_champion",
