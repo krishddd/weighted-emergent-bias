@@ -6,8 +6,34 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-Next: **M2 — Propagation** (Katz weighting + multi-scale EWMA). See
-[docs/plans/PHASE-2.md](docs/plans/PHASE-2.md).
+Next: **M3 — Control** (two-threshold hysteresis breaker, recovery state machine, LangGraph
+adapter). See [docs/DESIGN.md §8](docs/DESIGN.md).
+
+## [0.2.0] — 2026-07-31
+
+**M2 — Propagation.** Turns per-node bias scores into a network-level signal `B_net`, weighted by
+each node's downstream blast radius and integrated across execution. Characterized by the
+[Phase 2 propagation study](docs/studies/phase2-propagation.md): the same bias is ~5.8× more
+impactful seeded at a central node than a leaf, and `B_net` tracks downstream reach. Still no
+validated claims about real models — demonstrated on the ground-truth fake.
+
+### Added
+- **M2 WP1 — `AgentDAG`** (`topology/dag.py`): framework-agnostic directed graph with
+  deterministic (insertion-ordered) nodes, adjacency matrix, cycle detection, and topological order
+  (Kahn). Builds from an adjacency dict or a `networkx.DiGraph`; depends only on numpy.
+- **M2 WP2 — Katz centrality** (`topology/centrality.py`): `dependency_weights` / `katz_weight`
+  compute blast radius as row-sums of `(I − αA)⁻¹` (transposed orientation; upstream outranks
+  leaves). DAG nilpotency gives free α; cyclic graphs clamp α below `1/ρ` and record it. Out-degree
+  fallback.
+- **M2 WP3 — n-stable magnitude** (`accumulation.py`): `node_magnitude` = significance-gated excess
+  divergence, the quantity M2 accumulates (never `effect_size`, which is sample-size-dependent).
+- **M2 WP4 — composite weight**: `dependency_weights` accepts an optional injected error-history
+  prior (folded into Katz before normalization); injected-only, no self-updating loop.
+- **M2 WP5 — `NetworkAccumulator`** (`accumulation.py`): bias-corrected multi-scale EWMA (fast +
+  slow) producing `B_net`, with an order-independent superstep reduction (`weighted_mean` / `max`).
+- **M2 WP6 — DoT simulation harness** (`testing/dot_harness.py`): `simulate_dot` runs the full
+  M1+M2 stack; `B_net` rises on a seeded graph and stays flat on a control.
+- **M2 WP7 — propagation study** (`studies/phase2_propagation.py`, [report](docs/studies/phase2-propagation.md)).
 
 ## [0.1.0] — 2026-07-31
 

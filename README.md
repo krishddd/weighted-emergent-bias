@@ -6,11 +6,12 @@
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 ![Typing](https://img.shields.io/badge/mypy-strict-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-pre--alpha-orange)
+![Status](https://img.shields.io/badge/status-alpha%20v0.2-yellow)
 
-> **Status: pre-alpha, building M1.** The detection core is under active construction
-> (perturbation + client protocols shipped; divergence and noise floor next). This library
-> makes **no validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
+> **Status: alpha, v0.2.** Detection (M1) and propagation (M2) are shipped: from a prompt you can
+> get a calibrated per-node bias score, weight it by graph blast radius, and accumulate a
+> network-level signal. Control/intervention/evidence (M3–M5) are next. This library makes **no
+> validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
 
 ---
 
@@ -121,6 +122,24 @@ keys, and non-string values are held fixed. Explicit and proxy substitutions pro
 perturbations. See [docs/example-axes.md](docs/example-axes.md) for illustrative axis sets
 (no axis list ships as a default — that is a deliberate choice).
 
+Propagation (M2) weights each node's bias by its downstream blast radius and accumulates a
+network-level signal across execution:
+
+```python
+from weighted_emergent_bias import AgentDAG, NetworkAccumulator, dependency_weights
+
+dag = AgentDAG([("router", "worker"), ("router", "judge"), ("worker", "judge")])
+weights = dependency_weights(dag).weights  # Katz blast radius, normalized
+
+acc = NetworkAccumulator()  # fast + slow bias-corrected EWMA
+state = acc.update({"router": 0.4}, weights)  # a biased central node fires
+print(round(state.fast, 3))  # B_net rises with weighted node bias
+```
+
+The end-to-end detect→weight→accumulate path is exercised by the
+[DoT simulation harness](src/weighted_emergent_bias/testing/dot_harness.py); results are in the
+[propagation study](docs/studies/phase2-propagation.md).
+
 ## Roadmap
 
 Five layered modules — see [docs/ROADMAP.md](docs/ROADMAP.md). Each earlier module is a
@@ -128,26 +147,26 @@ number the later ones transform, so the order is not negotiable and M1 carries t
 
 ```mermaid
 flowchart TD
-    M1["M1 · Detection core<br/>perturbation · divergence · noise floor"]:::wip
-    M2["M2 · Propagation<br/>Katz weight · multi-scale EWMA"]:::todo
+    M1["M1 · Detection core<br/>perturbation · divergence · noise floor"]:::done
+    M2["M2 · Propagation<br/>Katz weight · multi-scale EWMA"]:::done
     M3["M3 · Control<br/>hysteresis breaker · state machine"]:::todo
     M4["M4 · Intervention<br/>skeptics · trust graph · MADERA"]:::todo
     M5["M5 · Evidence<br/>audit trail · SARIF · reports"]:::todo
     M1 --> M2 --> M3 --> M4 --> M5
     M3 --> M5
-    classDef wip fill:#b8860b,color:#fff,stroke:#6b4e06,stroke-width:2px;
+    classDef done fill:#1f7a1f,color:#fff,stroke:#0d3d0d,stroke-width:2px;
     classDef todo fill:#2b2b2b,color:#ccc,stroke:#555,stroke-dasharray:4 3;
 ```
 
 | | Module | Ships as | Status |
 | --- | --- | --- | --- |
-| **M1** | Detection core | v0.1 | 🟡 nearly complete — WP0–WP5 + WP7 done (perturbation, divergence, noise floor, probe, [calibration study](docs/studies/phase1-calibration.md)); WP6/SDC optional |
-| **M2** | Propagation — Katz weighting, multi-scale EWMA | v0.2 | ⚪ planned |
+| **M1** | Detection core — perturbation, divergence, noise floor, probe | v0.1 | ✅ shipped ([calibration study](docs/studies/phase1-calibration.md)) |
+| **M2** | Propagation — Katz weighting, multi-scale EWMA | v0.2 | ✅ shipped ([propagation study](docs/studies/phase2-propagation.md)) |
 | **M3** | Control — hysteresis breaker, state machine, LangGraph halt/reroute | v0.3 | ⚪ planned |
 | **M4** | Intervention — skeptic panel, trust pruning, MADERA | v0.4 | ⚪ planned |
 | **M5** | Evidence — causal trail, SARIF export, reporting | v0.5 | ⚪ planned |
 
-M1 is planned in detail in [docs/plans/PHASE-1.md](docs/plans/PHASE-1.md). The 2026-07
+Module plans: [PHASE-1](docs/plans/PHASE-1.md), [PHASE-2](docs/plans/PHASE-2.md). The 2026-07
 external-review triage is in [docs/reviews/](docs/reviews/2026-07-external-review-response.md).
 
 ## Prior work, and what this does not claim

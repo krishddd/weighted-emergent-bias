@@ -54,6 +54,11 @@ they are not risk.
 
 - **M1** — **shipped as v0.1.0.** Complete and characterized: [plans/PHASE-1.md](plans/PHASE-1.md),
   [calibration study](studies/phase1-calibration.md). WP6 (SDC) deferred as optional.
-- **M2** — planned in detail: [plans/PHASE-2.md](plans/PHASE-2.md). Not started.
-- **M3–M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of each phase,
+- **M2** — **shipped as v0.2.0.** Complete and characterized: [plans/PHASE-2.md](plans/PHASE-2.md),
+  [propagation study](studies/phase2-propagation.md). DAG, transposed Katz, n-stable magnitude,
+  composite weight, multi-scale accumulator, DoT harness.
+- **M3** — next up. Sketched in [DESIGN.md §8](DESIGN.md): two-threshold hysteresis breaker,
+  edge-level interception, Normal→Warning→Intervention→Recovery state machine, LangGraph adapter.
+  Detailed plan to be written at phase start.
+- **M4–M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of each phase,
   not before; earlier phases will change what later ones need.
