@@ -64,5 +64,5 @@ they are not risk.
 - **M4** — **shipped as v0.4.0.** Complete and characterized: [plans/PHASE-4.md](plans/PHASE-4.md),
   [intervention study](studies/phase4-intervention.md). Skeptic panel (+ LangGraph `Send` fan-out),
   trust graph (anonymized, no-prune-on-dissent), MADERA repair, and the runner wiring it into M3.
-- **M5** — next up. Sketched in [DESIGN.md](DESIGN.md): append-only causal audit trail, SARIF 2.1.0
-  export, HTML/JSON reporting. Detailed plan at phase start.
+- **M5** — planned in detail: [plans/PHASE-5.md](plans/PHASE-5.md). In progress. Append-only causal
+  audit trail, SARIF 2.1.0 export (schema-validated), HTML/JSON reporting, breach trace-back.
