@@ -8,7 +8,6 @@ single axis failing degrades to a recorded partial result rather than voiding th
 from __future__ import annotations
 
 import asyncio
-import time
 from collections.abc import Sequence
 
 import numpy as np
@@ -55,20 +54,34 @@ class _CountingClient:
         return await self._inner.score_candidates(prompt, candidates)
 
 
-class _SlowClient:
-    """Adds a fixed async delay to each call, to expose sequential vs. concurrent execution."""
+class _ConcurrencyTracker:
+    """Records the peak number of in-flight calls. Deterministic (not timing-based): if the probe
+    gathers its calls concurrently, all are in flight at once; if sequential, the peak is 1."""
 
-    def __init__(self, inner: FakeLLMClient, delay: float) -> None:
+    def __init__(self, inner: FakeLLMClient, delay: float = 0.01) -> None:
         self._inner = inner
         self._delay = delay
+        self.in_flight = 0
+        self.max_in_flight = 0
+
+    async def _enter(self) -> None:
+        self.in_flight += 1
+        self.max_in_flight = max(self.max_in_flight, self.in_flight)
+        await asyncio.sleep(self._delay)  # force overlap: every call parks here together
 
     async def generate(self, prompt: str) -> str:
-        await asyncio.sleep(self._delay)
-        return await self._inner.generate(prompt)
+        await self._enter()
+        try:
+            return await self._inner.generate(prompt)
+        finally:
+            self.in_flight -= 1
 
     async def score_candidates(self, prompt: str, candidates: Sequence[str]) -> FloatArray:
-        await asyncio.sleep(self._delay)
-        return await self._inner.score_candidates(prompt, candidates)
+        await self._enter()
+        try:
+            return await self._inner.score_candidates(prompt, candidates)
+        finally:
+            self.in_flight -= 1
 
 
 class _FlakyClient:
@@ -162,37 +175,21 @@ class TestChoiceProbe:
 
 
 class TestConcurrency:
-    async def test_calls_run_concurrently(self) -> None:
-        # probe.run() time = client-call latency + scoring CPU. Isolate the client-call part by
-        # subtracting a zero-delay run's time, so the CPU-heavy permutation test doesn't confound
-        # the measurement. With 18 calls (n=6 x 3 groups), sequential latency would be 18*delay;
-        # concurrent should be ~one delay.
-        delay = 0.05
+    async def test_all_calls_are_in_flight_at_once(self, rng: np.random.Generator) -> None:
+        # Deterministic concurrency check: with n=6 samples over 3 groups (baseline + 2 axes),
+        # a concurrent probe has all 18 calls in flight simultaneously; a sequential one peaks at 1.
         n = 6
-
-        def make(client: object) -> LOOCProbe:
-            return LOOCProbe(
-                client,  # type: ignore[arg-type]
-                task_mode=TaskMode.CHOICE,
-                axes=[GENDER, RACE],
-                rng=np.random.default_rng(1),
-                candidates=["c0", "c1", "c2", "c3"],
-                n_samples=n,
-            )
-
-        t0 = time.perf_counter()
-        await make(_fake(logit_noise=0.3)).run("he and him")
-        cpu_only = time.perf_counter() - t0
-
-        t1 = time.perf_counter()
-        await make(_SlowClient(_fake(logit_noise=0.3), delay=delay)).run("he and him")
-        with_delay = time.perf_counter() - t1
-
-        client_overhead = with_delay - cpu_only
-        sequential = delay * n * 3
-        assert client_overhead < sequential / 3, (
-            f"client-call overhead {client_overhead:.3f}s looks sequential (seq≈{sequential:.2f}s)"
+        client = _ConcurrencyTracker(_fake(logit_noise=0.3))
+        probe = LOOCProbe(
+            client,
+            task_mode=TaskMode.CHOICE,
+            axes=[GENDER, RACE],
+            rng=rng,
+            candidates=["c0", "c1", "c2", "c3"],
+            n_samples=n,
         )
+        await probe.run("he and him")
+        assert client.max_in_flight == n * 3
 
 
 class TestFailureIsolation:
