@@ -52,6 +52,8 @@ they are not risk.
 
 ## Current status
 
-- **M1** — planned in detail: [plans/PHASE-1.md](plans/PHASE-1.md). Not started.
-- **M2–M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of each phase,
+- **M1** — **shipped as v0.1.0.** Complete and characterized: [plans/PHASE-1.md](plans/PHASE-1.md),
+  [calibration study](studies/phase1-calibration.md). WP6 (SDC) deferred as optional.
+- **M2** — planned in detail: [plans/PHASE-2.md](plans/PHASE-2.md). Not started.
+- **M3–M5** — sketched in [DESIGN.md](DESIGN.md). Planned in detail at the start of each phase,
   not before; earlier phases will change what later ones need.
