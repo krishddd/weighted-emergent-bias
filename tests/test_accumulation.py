@@ -13,6 +13,7 @@ import pytest
 from weighted_emergent_bias import (
     BiasScore,
     DivergenceMethod,
+    NetworkAccumulator,
     TaskMode,
     compute_local_bias,
     node_magnitude,
@@ -93,3 +94,79 @@ class TestNInvariance:
         spread = max(magnitudes) - min(magnitudes)
         assert spread < 0.15, f"node_magnitude not n-stable: {magnitudes}"
         assert all(m > 0 for m in magnitudes)
+
+
+class TestNetworkAccumulator:
+    def test_validation(self) -> None:
+        with pytest.raises(ValueError, match="fast_alpha"):
+            NetworkAccumulator(fast_alpha=0.0)
+        with pytest.raises(ValueError, match="slow_alpha"):
+            NetworkAccumulator(slow_alpha=1.5)
+        with pytest.raises(ValueError, match="reduction"):
+            NetworkAccumulator(reduction="median")
+
+    def test_initial_state_is_zero(self) -> None:
+        acc = NetworkAccumulator()
+        assert acc.state.fast == 0.0
+        assert acc.state.slow == 0.0
+        assert acc.state.step == 0
+
+    def test_warmup_correction_exact_on_constant_input(self) -> None:
+        # Bias correction makes a constant input read at its true level from step 1 -- both scales,
+        # every step, exactly (no ramp-up from zero).
+        acc = NetworkAccumulator(fast_alpha=0.7, slow_alpha=0.1)
+        mags = {"a": 0.4}
+        weights = {"a": 1.0}
+        for _ in range(5):
+            state = acc.update(mags, weights)
+            assert state.fast == pytest.approx(0.4)
+            assert state.slow == pytest.approx(0.4)
+
+    def test_fast_reacts_more_than_slow_to_a_spike(self) -> None:
+        acc = NetworkAccumulator(fast_alpha=0.7, slow_alpha=0.1)
+        weights = {"a": 1.0}
+        for _ in range(5):
+            acc.update({"a": 0.0}, weights)  # quiet steps
+        state = acc.update({"a": 1.0}, weights)  # a spike
+        assert state.fast > state.slow
+
+    def test_superstep_reduction_is_order_independent(self) -> None:
+        # Shuffling the firing set's dict order must not change B_net.
+        weights = {"a": 0.5, "b": 0.3, "c": 0.2}
+        mags_fwd = {"a": 0.1, "b": 0.9, "c": 0.5}
+        mags_rev = {"c": 0.5, "b": 0.9, "a": 0.1}
+        s1 = NetworkAccumulator().update(mags_fwd, weights)
+        s2 = NetworkAccumulator().update(mags_rev, weights)
+        assert s1.fast == pytest.approx(s2.fast)
+        assert s1.slow == pytest.approx(s2.slow)
+
+    def test_weighted_mean_favors_high_weight_node(self) -> None:
+        # weighted_mean: a biased central (high-w) node dominates over a clean leaf.
+        acc = NetworkAccumulator(reduction="weighted_mean")
+        state = acc.update({"central": 1.0, "leaf": 0.0}, {"central": 0.9, "leaf": 0.1})
+        assert state.fast == pytest.approx(0.9)  # 0.9*1 + 0.1*0 / 1.0
+
+    def test_max_reduction(self) -> None:
+        acc = NetworkAccumulator(reduction="max")
+        state = acc.update({"a": 0.2, "b": 0.7}, {"a": 0.9, "b": 0.1})
+        assert state.fast == pytest.approx(0.7)  # worst raw magnitude, weight-agnostic
+
+    def test_empty_superstep_decays(self) -> None:
+        acc = NetworkAccumulator(fast_alpha=0.7, slow_alpha=0.1)
+        acc.update({"a": 1.0}, {"a": 1.0})
+        after_spike = acc.state.fast
+        state = acc.update({}, {})  # quiet step
+        assert state.fast < after_spike
+
+    def test_constant_input_converges_both_scales(self) -> None:
+        acc = NetworkAccumulator()
+        weights = {"a": 1.0}
+        for _ in range(50):
+            state = acc.update({"a": 0.3}, weights)
+        assert state.fast == pytest.approx(0.3)
+        assert state.slow == pytest.approx(0.3)
+
+    def test_missing_weight_raises(self) -> None:
+        acc = NetworkAccumulator()
+        with pytest.raises(ValueError, match="no dependency weight"):
+            acc.update({"a": 0.5}, {"b": 1.0})

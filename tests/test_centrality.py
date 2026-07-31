@@ -104,6 +104,42 @@ class TestOutDegreeFallback:
         assert sum(result.weights.values()) == pytest.approx(1.0)
 
 
+class TestCompositePrior:
+    def test_no_prior_equals_katz(self) -> None:
+        dag = AgentDAG([("a", "b"), ("b", "c")])
+        plain = dependency_weights(dag).weights
+        with_none = dependency_weights(dag, prior=None).weights
+        assert plain == with_none
+
+    def test_prior_shifts_weights(self) -> None:
+        # Two symmetric leaves; a prior favoring one must weight it higher.
+        dag = AgentDAG([("root", "x"), ("root", "y")])
+        base = dependency_weights(dag).weights
+        assert base["x"] == pytest.approx(base["y"])  # symmetric without prior
+        biased = dependency_weights(dag, prior={"x": 3.0, "y": 1.0}).weights
+        assert biased["x"] > biased["y"]
+
+    def test_missing_node_is_neutral(self) -> None:
+        dag = AgentDAG([("root", "x"), ("root", "y")])
+        # Prior only for x; y defaults to 1.0.
+        w = dependency_weights(dag, prior={"x": 2.0}).weights
+        assert w["x"] > w["y"]
+
+    def test_prior_applied_flag(self) -> None:
+        dag = AgentDAG([("a", "b")])
+        assert not dependency_weights(dag).prior_applied
+        assert dependency_weights(dag, prior={"a": 1.0}).prior_applied
+
+    def test_negative_prior_rejected(self) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            dependency_weights(AgentDAG([("a", "b")]), prior={"a": -1.0})
+
+    def test_weights_still_sum_to_one_with_prior(self) -> None:
+        dag = AgentDAG([("a", "b"), ("b", "c")])
+        w = dependency_weights(dag, prior={"a": 0.5, "c": 2.0}).weights
+        assert sum(w.values()) == pytest.approx(1.0)
+
+
 class TestValidation:
     def test_unknown_method_rejected(self) -> None:
         with pytest.raises(ValueError, match="unknown method"):

@@ -5,7 +5,7 @@ Pre-alpha. See docs/DESIGN.md and docs/plans/PHASE-1.md.
 
 from __future__ import annotations
 
-from .accumulation import node_magnitude
+from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
 from .clients import EmbeddingClient, LLMClient
 from .scoring import (
     AxisSpec,
@@ -43,6 +43,8 @@ __all__ = [
     "EmbeddingClient",
     "LLMClient",
     "LOOCProbe",
+    "NetworkAccumulator",
+    "NetworkState",
     "NodeId",
     "Payload",
     "Perturbation",

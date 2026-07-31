@@ -18,6 +18,7 @@ and clamp alpha, recording that the clamp fired -- never silently returning a di
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 import numpy as np
@@ -41,6 +42,7 @@ class WeightResult:
     attenuation: float
     clamp_applied: bool
     acyclic: bool
+    prior_applied: bool = False
 
 
 def _katz_vector(matrix: FloatArray, alpha: float) -> FloatArray:
@@ -86,12 +88,19 @@ def dependency_weights(
     *,
     method: str = "katz",
     attenuation: float = 0.5,
+    prior: Mapping[NodeId, float] | None = None,
 ) -> WeightResult:
     """Normalized dependency weight ``w_i`` for every node, in one pass.
 
     ``method="katz"`` uses blast-radius centrality; ``method="out_degree"`` is the cheap fallback
-    (``1 + out-degree``, so no node — not even a leaf — has zero influence over itself). Weights are
-    normalized to sum to 1. Recompute only when the topology changes; the result is deterministic.
+    (``1 + out-degree``, so no node -- not even a leaf -- has zero influence over itself). Weights
+    are normalized to sum to 1. Recompute only on topology change; the result is deterministic.
+
+    ``prior`` is an optional, externally-supplied per-node multiplier folded in *before*
+    normalization -- e.g. a verified error-history score ``P(biased | history_i)`` (higher = more
+    scrutiny). Missing nodes default to 1.0 (neutral). It is **injected only**: M2 never updates a
+    prior from its own detections, because a self-reinforcing error history is exactly the
+    minority-suppression loop the external review warned about (see docs/plans/PHASE-2.md R3).
     """
     n = len(dag)
     if n == 0:
@@ -108,7 +117,17 @@ def dependency_weights(
     else:
         raise ValueError(f"unknown method {method!r}; expected 'katz' or 'out_degree'")
 
+    if prior is not None:
+        if any(v < 0.0 for v in prior.values()):
+            raise ValueError("prior values must be non-negative")
+        factors: FloatArray = np.array(
+            [prior.get(node, 1.0) for node in dag.nodes], dtype=np.float64
+        )
+        raw = raw * factors
+
     total = float(raw.sum())
     normalized = raw / total if total > 0.0 else np.full(n, 1.0 / n, dtype=np.float64)
     weights = {node: float(normalized[dag.index(node)]) for node in dag.nodes}
-    return WeightResult(weights, method, alpha, clamp_applied, acyclic)
+    return WeightResult(
+        weights, method, alpha, clamp_applied, acyclic, prior_applied=prior is not None
+    )
