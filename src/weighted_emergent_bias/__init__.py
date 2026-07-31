@@ -6,6 +6,7 @@ Pre-alpha. See docs/DESIGN.md and docs/plans/PHASE-1.md.
 from __future__ import annotations
 
 from .accumulation import NetworkAccumulator, NetworkState, node_magnitude
+from .breaker import CircuitBreaker, ControlMachine, freeze
 from .clients import EmbeddingClient, LLMClient
 from .scoring import (
     AxisSpec,
@@ -45,6 +46,8 @@ __all__ = [
     "BreakerAction",
     "BreakerDecision",
     "BreakerState",
+    "CircuitBreaker",
+    "ControlMachine",
     "DivergenceMethod",
     "EmbeddingClient",
     "LLMClient",
@@ -63,6 +66,7 @@ __all__ = [
     "__version__",
     "compute_local_bias",
     "dependency_weights",
+    "freeze",
     "katz_weight",
     "node_magnitude",
     "perturb",
