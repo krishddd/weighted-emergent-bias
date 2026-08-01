@@ -11,6 +11,7 @@ import pytest
 from weighted_emergent_bias import SkepticPanel, SkepticStance, SkepticVerdict
 from weighted_emergent_bias.clients import FloatArray
 from weighted_emergent_bias.intervention.skeptics import (
+    _parse_verdict,
     devils_advocate,
     empirical_auditor,
 )
@@ -75,7 +76,8 @@ class TestLLMSkeptic:
         class _Client:
             async def generate(self, prompt: str) -> str:
                 return (
-                    "REVISE\nThis stereotypes the applicant; here is evidence.\n---\nNeutral text."
+                    "REVISE\nThis stereotypes the applicant.\n"
+                    "EVIDENCE: audit table 3.\n---\nNeutral text."
                 )
 
             async def score_candidates(self, prompt: str, candidates: Sequence[str]) -> FloatArray:
@@ -85,7 +87,52 @@ class TestLLMSkeptic:
         verdict = await skeptic.review({"answer": "biased"})
         assert verdict.stance is SkepticStance.REVISE
         assert verdict.proposed_payload == "Neutral text."
-        assert verdict.has_evidence  # "evidence" appeared in the reply
+        assert verdict.has_evidence  # explicit EVIDENCE: marker
+
+
+class TestEvidenceDetection:
+    """``has_evidence`` drives credibility, pruning and trust weight, so it must not fire on
+    prose *about* evidence -- only on an explicit marker or a citation."""
+
+    @pytest.mark.parametrize(
+        "reply",
+        [
+            "STANDS\nThere is no evidence for this claim.",
+            "STANDS\nI found zero evidence either way.",
+            "STANDS\nEvidence would be needed to say more.",
+        ],
+    )
+    def test_prose_about_evidence_does_not_count(self, reply: str) -> None:
+        assert not _parse_verdict("empirical_auditor", reply).has_evidence
+
+    @pytest.mark.parametrize(
+        "reply",
+        [
+            "REVISE\nSee the audit.\nEVIDENCE: table 3, page 9.",
+            "REVISE\nSee https://example.org/report for the breakdown.",
+            "REVISE\nevidence: lowercase marker still counts.",
+        ],
+    )
+    def test_marker_or_citation_counts(self, reply: str) -> None:
+        assert _parse_verdict("empirical_auditor", reply).has_evidence
+
+    async def test_reject_is_reachable_from_the_shipped_prompt(self) -> None:
+        # The prompt used to offer only STANDS/REVISE, leaving the parser's REJECT branch and the
+        # runner's REJECTED path dead for every reference skeptic.
+        seen: list[str] = []
+
+        class _Client:
+            async def generate(self, prompt: str) -> str:
+                seen.append(prompt)
+                return "REJECT\nDiscard this."
+
+            async def score_candidates(self, prompt: str, candidates: Sequence[str]) -> FloatArray:
+                raise NotImplementedError
+
+        verdict = await empirical_auditor(_Client()).review({"answer": "x"})
+        assert "REJECT" in seen[0]
+        assert "EVIDENCE:" in seen[0]
+        assert verdict.stance is SkepticStance.REJECT
 
     async def test_defaults_to_stands_on_unparseable(self) -> None:
         class _Client:

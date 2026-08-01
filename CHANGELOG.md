@@ -18,6 +18,44 @@ All notable changes to this project are documented here. Format follows
   `TaskMode.CHOICE` is unreachable analytically; the adapter recovers it by Monte Carlo (one-hot
   draws whose group mean is the empirical distribution), at the cost of needing a larger `n`.
 
+### Fixed
+- **Trust weighting was inverted** (`intervention/trust.py`): self-orientation `S` took the raw
+  confidence, so a no-evidence verdict at `confidence=0.0` landed on `S=0`, hit the `_S_FLOOR` clamp
+  and was handed ~2300× the weight of an evidence-backed verdict — the clamp added to *prevent*
+  `S→0` divergence was the thing triggering it. `S` is now an interpolation over `[0.25, 1.0]`, so
+  an unevidenced verdict never outweighs an evidenced one of equal stance and loses weight as it
+  grows more assertive. In `trust` mode this had let one content-free `STANDS` override three
+  evidenced `REVISE`s at 98.5% reported confidence.
+- **`max_retries` had become a lifetime cap** (`breaker.py`): `_attempts` was never reset on a
+  successful recovery, so a long run that cleanly self-healed `max_retries` separate times escalated
+  to human review on the strength of its recoveries. The counter now resets when an incident closes;
+  the bound is again per-incident. An escalated decision also retains the payload that caused the
+  halt even after `B_net` falls back, instead of handing human review `frozen: None`.
+- **The append-only audit trail was mutable** (`audit/trail.py`): `detail` was a shallow `dict()`
+  copy, rewritable both directly through the frozen event and through nested objects the caller
+  still held. It is now a deep copy behind a `MappingProxyType`, so a recorded event cannot be
+  edited — the guarantee the module documents.
+- **`has_evidence` fired on prose about evidence** (`intervention/skeptics.py`): a substring match
+  for `"evidence"` set the flag true on "no evidence provided", and the `empirical_auditor` prompt
+  contains the word itself. Detection now requires an explicit `EVIDENCE:` marker or a URL. The
+  reference prompt also now offers `REJECT` (previously unreachable) and asks for the marker.
+- **Skeptic panel was all-or-nothing** (`intervention/skeptics.py`): one failing client took the
+  whole `asyncio.gather` down and discarded the verdicts that did arrive. Failures are now dropped
+  and surviving verdicts returned. Panel-decision ties break toward the more cautious stance
+  (`REJECT > REVISE > STANDS`) instead of silently failing open on enum declaration order.
+- **`calibrate_thresholds` returned unachievable thresholds** (`calibration.py`): a target rate
+  finer than `1/n` made `np.percentile` interpolate to the sample maximum. It now requires
+  `n ≥ ⌈1/target⌉` control samples and rejects an explicitly-empty `control_slow`.
+
+### Changed
+- **`compute_local_bias` permutation/bootstrap loops are vectorized** (`scoring/noise.py`):
+  block-evaluated instead of one validated estimator call per draw. ~4–6× faster with **bit-for-bit
+  identical** outputs on the same seed (the RNG stream is consumed unchanged).
+- **`AgentDAG` caches its adjacency matrix and topological order** (`topology/dag.py`): the graph is
+  immutable, so centrality no longer rebuilds them per lookup. `adjacency_matrix()` still returns a
+  fresh copy. Corrected the `dag.py` docstring that told a maintainer to transpose `A` — the code
+  correctly consumes it as-is, and a transpose would re-invert the blast-radius ranking.
+
 ### Still not claimed
 Benchmark reproduction remains unscheduled, and **no validated-performance claim on real models has
 been made** — the harness exists, but until someone runs it and publishes numbers the claim stays

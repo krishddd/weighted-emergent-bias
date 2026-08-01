@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from weighted_emergent_bias import (
     AuditKind,
     AuditTrail,
@@ -96,3 +98,30 @@ class TestConvenienceRecorders:
         trail.record_score(_score(), node="a")
         assert len(trail.of_kind(AuditKind.SCORE)) == 1
         assert len(trail.of_kind(AuditKind.NOTE)) == 1
+
+
+class TestTrailIsGenuinelyAppendOnly:
+    """Regression: ``record`` took a shallow ``dict()`` copy, so a recorded event stayed
+    rewritable both directly through the frozen dataclass and through any nested object the
+    caller still held. An evidence log that can be quietly edited is not an audit trail."""
+
+    def test_detail_cannot_be_written_through(self) -> None:
+        trail = AuditTrail()
+        trail.record(AuditKind.NOTE, detail={"finding": "biased"})
+        with pytest.raises(TypeError):
+            trail.events[0].detail["finding"] = "tampered"  # type: ignore[index]
+        assert trail.events[0].detail["finding"] == "biased"
+
+    def test_nested_values_are_snapshotted(self) -> None:
+        trail = AuditTrail()
+        payload = {"finding": "biased", "nested": {"score": 0.9}}
+        trail.record(AuditKind.NOTE, detail=payload)
+        payload["nested"]["score"] = 0.0  # type: ignore[index]
+        assert trail.events[0].detail["nested"] == {"score": 0.9}
+
+    def test_recorded_scores_stay_readable_downstream(self) -> None:
+        # The read-only view must still behave like a mapping for SARIF/report consumers.
+        trail = AuditTrail()
+        trail.record(AuditKind.NOTE, detail={"a": 1})
+        assert dict(trail.events[0].detail) == {"a": 1}
+        assert trail.events[0].detail.get("missing") is None

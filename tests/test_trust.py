@@ -102,3 +102,61 @@ class TestValidation:
         result = graph.aggregate(verdicts)
         assert result.decision is PanelDecision.STANDS
         assert len(result.pruned) == 2
+        assert result.confidence == 0.0  # zero confidence is the "no usable review" marker
+
+
+class TestTrustIsMonotonicInEvidence:
+    """Regression: ``S`` (self-orientation) once took the raw confidence, so a no-evidence
+    verdict at ``confidence=0.0`` landed on ``S=0``, hit the ``_S_FLOOR`` clamp and was handed
+    ~2300x weight -- the clamp meant to prevent divergence caused it. An unevidenced verdict must
+    never outweigh an evidence-backed one, and must lose weight as it grows more assertive."""
+
+    def test_unevidenced_never_outweighs_backed(self) -> None:
+        graph = TrustGraph(weighting="trust")
+        backed = graph.trust(_v("backed", SkepticStance.REVISE, conf=0.9, evidence=True)).value
+        for conf in (0.0, 0.25, 0.5, 0.75, 1.0):
+            bare = graph.trust(_v("bare", SkepticStance.STANDS, conf=conf, evidence=False)).value
+            assert bare < backed, f"unevidenced verdict at conf={conf} outweighed an evidenced one"
+
+    def test_weight_decreases_as_unevidenced_confidence_rises(self) -> None:
+        graph = TrustGraph(weighting="trust")
+        weights = [
+            graph.trust(_v("bare", SkepticStance.STANDS, conf=c, evidence=False)).value
+            for c in (0.0, 0.3, 0.6, 0.9)
+        ]
+        assert weights == sorted(weights, reverse=True)
+
+    def test_clueless_verdict_cannot_override_evidenced_majority(self) -> None:
+        graph = TrustGraph(weighting="trust")
+        verdicts = [
+            _v(f"backed{i}", SkepticStance.REVISE, conf=0.9, evidence=True, rev="fixed")
+            for i in range(3)
+        ] + [_v("clueless", SkepticStance.STANDS, conf=0.0, evidence=False)]
+        result = graph.aggregate(verdicts)
+        assert result.decision is PanelDecision.REVISED
+        assert result.corrected_payload == "fixed"
+
+
+class TestTieBreaking:
+    """An exact split resolves toward the more cautious stance, not toward whichever enum member
+    happened to be declared first (which silently favoured STANDS -- fail-open)."""
+
+    def test_stands_reject_tie_goes_to_reject(self) -> None:
+        graph = TrustGraph(weighting="uniform")
+        result = graph.aggregate(
+            [
+                _v("a", SkepticStance.STANDS, conf=0.5, evidence=True),
+                _v("b", SkepticStance.REJECT, conf=0.5, evidence=True),
+            ]
+        )
+        assert result.decision is PanelDecision.REJECTED
+
+    def test_stands_revise_tie_goes_to_revise(self) -> None:
+        graph = TrustGraph(weighting="uniform")
+        result = graph.aggregate(
+            [
+                _v("a", SkepticStance.STANDS, conf=0.5, evidence=True),
+                _v("b", SkepticStance.REVISE, conf=0.5, evidence=True, rev="fixed"),
+            ]
+        )
+        assert result.decision is PanelDecision.REVISED

@@ -120,7 +120,8 @@ class ControlMachine:
     ``fast``/``slow`` scales once per superstep via :meth:`step`. On entering Intervention it calls
     ``intervention_hook`` (where M4 repairs); recovery to Normal requires the cool-down to elapse
     *and* ``B_net`` to have fallen below ``tau_exit`` (re-measured, not assumed). After
-    ``max_retries`` failed attempts it escalates to a terminal ESCALATED state.
+    ``max_retries`` failed attempts **within a single incident** it escalates to a terminal
+    ESCALATED state; a successful recovery closes the incident and resets the attempt counter.
     """
 
     def __init__(
@@ -142,6 +143,7 @@ class ControlMachine:
         self._state = BreakerState.NORMAL
         self._cooldown = 0
         self._attempts = 0
+        self._frozen: Payload | None = None
 
     @property
     def state(self) -> BreakerState:
@@ -158,13 +160,19 @@ class ControlMachine:
         raw: BreakerDecision,
         reason: str,
     ) -> BreakerDecision:
+        # The breaker only freezes while it is tripped, so once B_net falls back the payload that
+        # caused the halt would vanish from later decisions -- including the ESCALATED one handed
+        # to a human, which is exactly where the evidence is needed. Retain the incident's frozen
+        # payload until the machine returns to Normal.
+        if raw.frozen_payload is not None:
+            self._frozen = raw.frozen_payload
         return BreakerDecision(
             state=state,
             action=action,
             mixing_ratio=raw.mixing_ratio,
             b_net=raw.b_net,
             reason=reason,
-            frozen_payload=raw.frozen_payload,
+            frozen_payload=raw.frozen_payload if raw.frozen_payload is not None else self._frozen,
         )
 
     def _enter_intervention(self, raw: BreakerDecision) -> BreakerDecision:
@@ -204,9 +212,16 @@ class ControlMachine:
             )
         if raw.state is not BreakerState.INTERVENTION:
             self._state = BreakerState.NORMAL
-            return self._decision(
+            decision = self._decision(
                 BreakerState.NORMAL, BreakerAction.PROCEED, raw, "recovered: B_net below tau_exit"
             )
+            # The incident is closed. ``max_retries`` bounds the repair attempts *within* one
+            # incident; without this reset it degrades into a lifetime counter, so a long run that
+            # successfully self-heals ``max_retries`` separate times escalates to human review on
+            # the strength of its recoveries rather than its failures.
+            self._attempts = 0
+            self._frozen = None
+            return decision
         if self._attempts >= self._max_retries:
             self._state = BreakerState.ESCALATED
             return self._decision(

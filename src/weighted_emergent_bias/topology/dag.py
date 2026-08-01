@@ -25,8 +25,14 @@ class AgentDAG:
     """A directed graph with deterministic, insertion-ordered nodes.
 
     Edges point in the direction of information flow (upstream ``->`` downstream). The adjacency
-    matrix ``A`` has ``A[i, j] = 1`` iff there is an edge from ``nodes[i]`` to ``nodes[j]``; M2's
-    blast-radius centrality transposes it (a node's influence flows along outgoing edges).
+    matrix ``A`` has ``A[i, j] = 1`` iff there is an edge from ``nodes[i]`` to ``nodes[j]``.
+
+    M2's blast-radius centrality consumes this matrix **as-is** -- it takes row-sums of
+    ``(I - alpha*A)^-1``, which count the walks leaving each node, i.e. influence flowing along
+    outgoing edges. That is already the "reversed graph" relative to ``networkx.katz_centrality``'s
+    incoming-influence convention; no transpose is applied here or in :mod:`.centrality`. Do not
+    add one -- transposing ``A`` measures influence *arriving* at a node and ranks terminal leaves
+    as most critical, exactly inverted. The A->B->C orientation test guards this.
     """
 
     def __init__(
@@ -57,6 +63,13 @@ class AgentDAG:
         for src, dst in self._edges:
             self._succ[src].append(dst)
             self._pred[dst].append(src)
+
+        # The graph is immutable once built, so these derived structures are computed at most once.
+        # Centrality asks for both repeatedly (and ``katz_weight`` rebuilds the matrix per call),
+        # which made per-node weighting rebuild O(V+E) and O(n^2) work on every lookup.
+        self._matrix_cache: FloatArray | None = None
+        self._topo_cache: tuple[NodeId, ...] | None = None
+        self._acyclic_cache: bool | None = None
 
     # --- construction adapters ---------------------------------------------------------------
 
@@ -101,18 +114,27 @@ class AgentDAG:
     # --- matrices and structure --------------------------------------------------------------
 
     def adjacency_matrix(self) -> FloatArray:
-        """The ``(n, n)`` adjacency matrix in canonical node order (``A[i, j] = 1`` for i->j)."""
-        n = len(self._nodes)
-        matrix: FloatArray = np.zeros((n, n), dtype=np.float64)
-        for src, dst in self._edges:
-            matrix[self._index[src], self._index[dst]] = 1.0
-        return matrix
+        """The ``(n, n)`` adjacency matrix in canonical node order (``A[i, j] = 1`` for i->j).
+
+        Returns a fresh copy each call, so a caller cannot mutate the cached matrix.
+        """
+        if self._matrix_cache is None:
+            n = len(self._nodes)
+            matrix: FloatArray = np.zeros((n, n), dtype=np.float64)
+            for src, dst in self._edges:
+                matrix[self._index[src], self._index[dst]] = 1.0
+            self._matrix_cache = matrix
+        return np.array(self._matrix_cache, dtype=np.float64, copy=True)
 
     def topological_order(self) -> tuple[NodeId, ...]:
         """Nodes in a topological order (Kahn's algorithm). Raises ``ValueError`` if cyclic.
 
         Ties are broken by canonical node order, so the result is deterministic.
         """
+        if self._topo_cache is not None:
+            return self._topo_cache
+        if self._acyclic_cache is False:
+            raise ValueError("graph has a cycle; no topological order exists")
         indegree = {n: len(self._pred[n]) for n in self._nodes}
         ready = [n for n in self._nodes if indegree[n] == 0]  # canonical order preserved
         ordered: list[NodeId] = []
@@ -124,13 +146,17 @@ class AgentDAG:
                 if indegree[succ] == 0:
                     ready.append(succ)
         if len(ordered) != len(self._nodes):
+            self._acyclic_cache = False
             raise ValueError("graph has a cycle; no topological order exists")
-        return tuple(ordered)
+        self._topo_cache = tuple(ordered)
+        self._acyclic_cache = True
+        return self._topo_cache
 
     def is_acyclic(self) -> bool:
         """True if the graph is a DAG (has a topological order)."""
-        try:
-            self.topological_order()
-        except ValueError:
-            return False
-        return True
+        if self._acyclic_cache is None:
+            try:
+                self.topological_order()
+            except ValueError:
+                self._acyclic_cache = False
+        return bool(self._acyclic_cache)

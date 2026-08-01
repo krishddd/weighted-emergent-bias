@@ -58,6 +58,20 @@ def calibrate_thresholds(
         raise ValueError(f"exit_ratio must be in (0, 1), got {exit_ratio}")
     if len(control_fast) == 0:
         raise ValueError("control_fast must be non-empty")
+    if control_slow is not None and len(control_slow) == 0:
+        raise ValueError("control_slow must be non-empty when supplied")
+
+    # A quantile cannot resolve a rate finer than 1/n: asking for a 1% false-halt rate from 10
+    # control steps makes np.percentile interpolate to the sample maximum and return a threshold
+    # whose stated rate the data cannot support. The library ships the method, but it should not
+    # hand back a number that quietly means something other than what was asked for.
+    required = int(np.ceil(1.0 / target_false_halt_rate))
+    if len(control_fast) < required:
+        raise ValueError(
+            f"targeting a false-halt rate of {target_false_halt_rate} needs at least {required} "
+            f"control_fast samples to resolve the {100.0 * (1.0 - target_false_halt_rate):.4g}th "
+            f"percentile, got {len(control_fast)}"
+        )
 
     quantile = 100.0 * (1.0 - target_false_halt_rate)
     fast = np.asarray(control_fast, dtype=np.float64)

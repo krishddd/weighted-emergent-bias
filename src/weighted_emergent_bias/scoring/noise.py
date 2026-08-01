@@ -33,9 +33,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
 from ..types import BiasScore, DivergenceMethod, FloatArray, TaskMode
 from .divergence import cosine_distance, jensen_shannon
+
+# A resampling draw is a pair of integer index arrays (into the baseline / counterfactual stacks).
+_IntArray = npt.NDArray[np.intp]
+_Draw = tuple[_IntArray, _IntArray]
 
 
 def _stack(samples: Sequence[FloatArray], label: str) -> FloatArray:
@@ -61,6 +66,67 @@ def _stat(group_a: FloatArray, group_b: FloatArray, task_mode: TaskMode) -> floa
     if task_mode is TaskMode.GENERATIVE:
         return cosine_distance(mean_a, mean_b)
     raise ValueError(f"unsupported task_mode: {task_mode!r}")
+
+
+# --- batched resampling ----------------------------------------------------------------------
+#
+# The permutation null and the bootstrap CI evaluate the *same* statistic thousands of times. Doing
+# that one Python call at a time re-ran the public estimators' full input validation per draw (a
+# sum-to-1 check and two array scans inside ``_as_distribution``) on values the caller already
+# validated, which dominated the cost. These helpers evaluate a block of draws at once.
+#
+# The RNG is still consumed exactly as before -- one ``rng.permutation`` per null draw, then the
+# same interleaved ``rng.integers`` pairs per bootstrap draw -- so a given seed yields the same
+# numbers it did before; only the arithmetic is batched.
+
+_CHUNK = 128  # draws per block; caps peak memory at _CHUNK * (n + m) * width floats
+
+
+def _jsd_rows(p: FloatArray, q: FloatArray) -> FloatArray:
+    """Row-wise true JSD in bits for two (k, w) blocks of distributions. Mirrors ``_kl_bits``."""
+    m = 0.5 * (p + q)
+    log_m = np.log2(np.maximum(m, np.finfo(np.float64).tiny))
+    kl_p = np.where(p > 0.0, p * (np.log2(np.where(p > 0.0, p, 1.0)) - log_m), 0.0).sum(axis=1)
+    kl_q = np.where(q > 0.0, q * (np.log2(np.where(q > 0.0, q, 1.0)) - log_m), 0.0).sum(axis=1)
+    clipped: FloatArray = np.clip(0.5 * kl_p + 0.5 * kl_q, 0.0, 1.0)
+    return clipped
+
+
+def _cosine_rows(u: FloatArray, v: FloatArray) -> FloatArray:
+    """Row-wise cosine distance for two (k, w) blocks of embeddings."""
+    nu = np.linalg.norm(u, axis=1)
+    nv = np.linalg.norm(v, axis=1)
+    if bool(np.any(nu == 0.0)) or bool(np.any(nv == 0.0)):
+        raise ValueError("cosine distance is undefined for a zero-norm vector")
+    cos: FloatArray = np.clip((u * v).sum(axis=1) / (nu * nv), -1.0, 1.0)
+    return 1.0 - cos
+
+
+def _stat_rows(means_a: FloatArray, means_b: FloatArray, task_mode: TaskMode) -> FloatArray:
+    """Batched counterpart of :func:`_stat`, over blocks of already-computed group means."""
+    if task_mode is TaskMode.CHOICE:
+        norm_a = means_a / means_a.sum(axis=1, keepdims=True)
+        norm_b = means_b / means_b.sum(axis=1, keepdims=True)
+        return _jsd_rows(norm_a, norm_b)
+    if task_mode is TaskMode.GENERATIVE:
+        return _cosine_rows(means_a, means_b)
+    raise ValueError(f"unsupported task_mode: {task_mode!r}")
+
+
+def _stats_for_draws(
+    src_a: FloatArray,
+    src_b: FloatArray,
+    draws: Sequence[_Draw],
+    task_mode: TaskMode,
+) -> FloatArray:
+    """Evaluate the statistic for each ``(index_a, index_b)`` draw, in memory-bounded blocks."""
+    out: FloatArray = np.empty(len(draws), dtype=np.float64)
+    for start in range(0, len(draws), _CHUNK):
+        block = draws[start : start + _CHUNK]
+        means_a = src_a[np.stack([d[0] for d in block])].mean(axis=1)
+        means_b = src_b[np.stack([d[1] for d in block])].mean(axis=1)
+        out[start : start + len(block)] = _stat_rows(means_a, means_b, task_mode)
+    return out
 
 
 def compute_local_bias(
@@ -99,12 +165,11 @@ def compute_local_bias(
     t_obs = _stat(base, cf, task_mode)
 
     # Permutation null: shuffle group labels, recompute the statistic.
-    null = np.empty(n_permutations, dtype=np.float64)
-    for i in range(n_permutations):
+    perm_draws: list[_Draw] = []
+    for _ in range(n_permutations):
         order = rng.permutation(n + m)
-        perm_a = pooled[order[:n]]
-        perm_b = pooled[order[n:]]
-        null[i] = _stat(perm_a, perm_b, task_mode)
+        perm_draws.append((order[:n], order[n:]))
+    null = _stats_for_draws(pooled, pooled, perm_draws, task_mode)
 
     null_mean = float(null.mean())
     null_std = float(null.std(ddof=1))
@@ -115,11 +180,12 @@ def compute_local_bias(
     p_value = float((1 + np.sum(null >= t_obs - 1e-12)) / (1 + n_permutations))
 
     # Bootstrap CI on the effect size: resample within each group with replacement.
-    boot = np.empty(n_bootstrap, dtype=np.float64)
-    for i in range(n_bootstrap):
-        a = base[rng.integers(0, n, n)]
-        b = cf[rng.integers(0, m, m)]
-        boot[i] = (_stat(a, b, task_mode) - null_mean) / eff_std
+    boot_draws: list[_Draw] = []
+    for _ in range(n_bootstrap):
+        idx_a: _IntArray = np.asarray(rng.integers(0, n, size=n), dtype=np.intp)
+        idx_b: _IntArray = np.asarray(rng.integers(0, m, size=m), dtype=np.intp)
+        boot_draws.append((idx_a, idx_b))
+    boot = (_stats_for_draws(base, cf, boot_draws, task_mode) - null_mean) / eff_std
     lo_pct = 100.0 * (1.0 - ci) / 2.0
     ci_low = float(np.percentile(boot, lo_pct))
     ci_high = float(np.percentile(boot, 100.0 - lo_pct))

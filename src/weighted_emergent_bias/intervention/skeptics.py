@@ -14,6 +14,7 @@ aggregating them into a decision (with trust weighting and pruning) is the trust
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Sequence
 from typing import Protocol
 
@@ -45,6 +46,23 @@ class SkepticAgent(Protocol):
     async def review(self, disputed: Payload, context: str = "") -> SkepticVerdict: ...
 
 
+_EVIDENCE_MARKER = "EVIDENCE:"
+_URL_RE = re.compile(r"https?://\S+")
+
+
+def _detect_evidence(text: str) -> bool:
+    """Whether a reply carries citable evidence, from an *explicit* marker or a URL.
+
+    Deliberately not a substring search for ``"evidence"``. That heuristic inverts on the single
+    most common phrasing a skeptic uses -- "no evidence provided" sets the flag *true* -- and the
+    ``empirical_auditor`` role prompt contains the word itself, which models routinely echo. Since
+    ``has_evidence`` drives credibility, the overconfidence prune, and the trust weight, it needs a
+    signal that cannot be produced by discussing evidence in the abstract. A skeptic must either
+    emit an ``EVIDENCE:`` line (the prompt asks for one) or cite a URL.
+    """
+    return _EVIDENCE_MARKER in text.upper() or bool(_URL_RE.search(text))
+
+
 def _parse_verdict(agent_type: str, text: str) -> SkepticVerdict:
     """Parse a reference skeptic's free-form reply into a structured verdict.
 
@@ -64,7 +82,7 @@ def _parse_verdict(agent_type: str, text: str) -> SkepticVerdict:
     proposed: Payload | None = None
     if stance is not SkepticStance.STANDS and revision.strip():
         proposed = revision.strip()
-    has_evidence = "evidence" in stripped.lower() or "http" in stripped.lower()
+    has_evidence = _detect_evidence(stripped)
     return SkepticVerdict(
         agent_type=agent_type,
         stance=stance,
@@ -88,8 +106,10 @@ class LLMSkeptic:
     async def review(self, disputed: Payload, context: str = "") -> SkepticVerdict:
         prompt = (
             f"{self._prompt}\n\nOutput under review:\n{disputed}\n{context}\n\n"
-            "Respond with STANDS or REVISE on the first line, then your critique, "
-            "then optionally '---' followed by a corrected version."
+            "Respond with STANDS, REVISE, or REJECT on the first line, then your critique. "
+            "If you can cite concrete support, add a line beginning 'EVIDENCE:' (a URL counts); "
+            "omit it when you cannot. "
+            "Then optionally '---' followed by a corrected version."
         )
         text = await self._client.generate(prompt)
         return _parse_verdict(self.agent_type, text)
@@ -124,5 +144,13 @@ class SkepticPanel:
         return self._agents
 
     async def review(self, disputed: Payload, context: str = "") -> tuple[SkepticVerdict, ...]:
-        verdicts = await asyncio.gather(*(a.review(disputed, context) for a in self._agents))
-        return tuple(verdicts)
+        """Collect every skeptic's verdict concurrently; a failing skeptic is dropped, not fatal.
+
+        One flaky client would otherwise take the whole panel down with it and discard the verdicts
+        that did arrive. Failures are omitted from the result, so the trust graph weighs only real
+        verdicts -- and an empty return says plainly that no reviewer survived.
+        """
+        settled = await asyncio.gather(
+            *(a.review(disputed, context) for a in self._agents), return_exceptions=True
+        )
+        return tuple(v for v in settled if isinstance(v, SkepticVerdict))

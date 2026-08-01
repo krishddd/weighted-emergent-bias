@@ -13,8 +13,10 @@ event, so the record cannot be quietly rewritten.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
+from types import MappingProxyType
 from typing import Any
 
 from ..intervention.types import PanelResult
@@ -60,12 +62,18 @@ class AuditTrail:
         node: NodeId | None = None,
         detail: Mapping[str, Any] | None = None,
     ) -> AuditEvent:
-        """Append an event and return it. The only way to grow the trail."""
+        """Append an event and return it. The only way to grow the trail.
+
+        ``detail`` is deep-copied behind a read-only view. A shallow ``dict()`` copy left the record
+        rewritable two ways -- ``trail.events[i].detail[k] = ...`` straight through the frozen
+        dataclass, and through any nested object the caller still held a reference to -- which is
+        not the append-only guarantee this module exists to provide.
+        """
         event = AuditEvent(
             seq=len(self._events),
             kind=kind,
             node=node,
-            detail=dict(detail or {}),
+            detail=MappingProxyType(deepcopy(dict(detail or {}))),
             time=self._clock() if self._clock is not None else None,
         )
         self._events.append(event)
