@@ -13,6 +13,9 @@ venv/
 htmlcov/
 .DS_Store
 
+# MkDocs build output (deployed from CI, never committed)
+site/
+
 # Local source material — reference only, not distributed
 *.docx
 *.pdf

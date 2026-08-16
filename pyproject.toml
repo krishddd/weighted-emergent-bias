@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "weighted-emergent-bias"
-version = "0.5.0"
+version = "0.6.0"
 description = "A runtime circuit-breaker for the Degeneration-of-Thought (DoT) problem in multi-agent LLM systems."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,10 +35,15 @@ dev = [
 study = ["matplotlib>=3.7"]
 # Real-model validation harness (studies/validate_real_model.py). Never used by the core or CI.
 anthropic = ["anthropic>=0.40"]
+# Documentation site (mkdocs.yml -> GitHub Pages). Build-time only; not a runtime dependency.
+docs = ["mkdocs-material>=9.5"]
 
 [project.urls]
-Homepage = "https://github.com/krishddd/weighted-emergent-bias"
-Documentation = "https://github.com/krishddd/weighted-emergent-bias/blob/main/docs/DESIGN.md"
+Homepage = "https://krishddd.github.io/weighted-emergent-bias/"
+Documentation = "https://krishddd.github.io/weighted-emergent-bias/"
+Repository = "https://github.com/krishddd/weighted-emergent-bias"
+Changelog = "https://github.com/krishddd/weighted-emergent-bias/blob/main/CHANGELOG.md"
+Issues = "https://github.com/krishddd/weighted-emergent-bias/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/weighted_emergent_bias"]
@@ -46,7 +51,7 @@ packages = ["src/weighted_emergent_bias"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-extend-exclude = ["docs", ".venv"]
+extend-exclude = ["docs", "wiki", ".venv"]
 
 [tool.ruff.lint]
 select = [

@@ -3,17 +3,39 @@
 **A runtime circuit-breaker for the Degeneration-of-Thought (DoT) problem in multi-agent LLM systems.**
 
 [![CI](https://github.com/krishddd/weighted-emergent-bias/actions/workflows/ci.yml/badge.svg)](https://github.com/krishddd/weighted-emergent-bias/actions/workflows/ci.yml)
+[![Docs](https://github.com/krishddd/weighted-emergent-bias/actions/workflows/docs.yml/badge.svg)](https://krishddd.github.io/weighted-emergent-bias/)
+[![PyPI](https://img.shields.io/pypi/v/weighted-emergent-bias.svg)](https://pypi.org/project/weighted-emergent-bias/)
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 ![Typing](https://img.shields.io/badge/mypy-strict-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-alpha%20v0.5-brightgreen)
 
-> **Status: alpha, v0.5 — all five modules shipped.** Detect per-node bias, weight + accumulate it,
+📖 **[Documentation](https://krishddd.github.io/weighted-emergent-bias/)** ·
+📦 **[PyPI](https://pypi.org/project/weighted-emergent-bias/)** ·
+📚 **[Wiki](https://github.com/krishddd/weighted-emergent-bias/wiki)** ·
+🗺 **[Roadmap](docs/ROADMAP.md)** ·
+📐 **[Design](docs/DESIGN.md)**
+
+> **Status: alpha, v0.6 — all five modules shipped.** Detect per-node bias, weight + accumulate it,
 > halt/reroute with hysteresis + a recovery machine, repair via a skeptic panel or MADERA, and emit an
 > append-only audit trail with SARIF 2.1.0 export and HTML/JSON reports. This library makes **no
 > validated performance claims** — see [Prior work](#prior-work-and-what-this-does-not-claim).
 
 ---
+
+## Contents
+
+- [The problem](#the-problem)
+- [Scope — what this detects, and what it does not](#scope--what-this-detects-and-what-it-does-not)
+- [How it works](#how-it-works)
+- [The control lifecycle](#the-control-lifecycle)
+- [Install](#install)
+- [Quickstart](#quickstart)
+- [Design principles](#design-principles)
+- [Roadmap](#roadmap)
+- [Prior work, and what this does not claim](#prior-work-and-what-this-does-not-claim)
+- [Contributing](#contributing)
+
+## The problem
 
 In a multi-agent LLM pipeline, one agent's mildly stereotyped output becomes the next agent's
 ground truth. Downstream agents do not re-litigate the premise they were handed — they build
@@ -28,6 +50,18 @@ by the node's downstream blast radius via graph centrality, accumulates the weig
 into a network-level moving average as the graph executes, and halts the run deterministically
 when that average crosses a threshold — freezing the compromised payload and rerouting control
 to a mitigation subgraph instead of letting the contaminated state propagate.
+
+```mermaid
+flowchart LR
+    A["Agent A<br/>mild skew"] -->|"output becomes<br/>A's premise"| B["Agent B"]
+    B --> C["Agent C"]
+    C --> D["Agent D<br/>fully homogenized"]
+    A -.->|"no agent re-litigates<br/>what it was handed"| D
+    classDef bad fill:#7a1f1f,color:#fff,stroke:#3d0d0d,stroke-width:2px;
+    classDef warn fill:#7a5a1f,color:#fff,stroke:#3d2d0d,stroke-width:2px;
+    class A warn
+    class D bad
+```
 
 ## Scope — what this detects, and what it does not
 
@@ -74,11 +108,36 @@ flowchart LR
 | Stage | Mechanism |
 | --- | --- |
 | **Detect** | LOOC probes each node with a demographically perturbed counterfactual and measures the divergence (true Jensen–Shannon over a shared candidate support, or an embedding distance for free-form output) **net of the node's own sampling noise**. |
-| **Weight** | Katz centrality over the *transposed* agent DAG gives each node a dependency weight `wᵢ` (downstream blast radius), complemented by a Bayesian error-history score. |
+| **Weight** | Blast-radius centrality gives each node a dependency weight `wᵢ` — row-sums of the Katz walk matrix, counting the walks *leaving* a node, i.e. Katz on the reversed graph relative to networkx's incoming-influence convention. Optionally complemented by an injected error-history prior. |
 | **Accumulate** | Fast + slow bias-corrected EWMAs track `B_net` across supersteps — the fast scale catches spikes, the slow scale catches drift. |
 | **Break** | A two-threshold hysteresis controller (`τ_enter` > `τ_exit`) halts execution deterministically and freezes the payload — before the downstream node consumes it. |
 | **Intervene** | Conformity spirals route to parallel Skeptic Agents under a trust graph; parametric bias routes to a MADERA-style diagnose → retrieve → rewrite repair, then a guarded re-entry. |
 | **Audit** | Every probe, divergence, weight, and routing decision lands in an append-only causal trail, exportable as SARIF or HTML. |
+
+## The control lifecycle
+
+`ControlMachine` is a deterministic four-state machine with a terminal escalation. Recovery is
+**re-measured, never assumed**: the cool-down must elapse *and* `B_net` must independently fall
+back below `tau_exit` before the run resumes.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Normal
+    Normal --> Warning: slow B_net >= tau_warn (drift)
+    Warning --> Normal: drift clears
+    Normal --> Intervention: fast B_net >= tau_enter
+    Warning --> Intervention: fast B_net >= tau_enter
+    Intervention --> Recovery: repair hook fires<br/>(payload frozen)
+    Recovery --> Recovery: cool-down pending -> HALT
+    Recovery --> Normal: B_net < tau_exit<br/>(incident closed, retries reset)
+    Recovery --> Intervention: still breached,<br/>attempts < max_retries
+    Recovery --> Escalated: attempts == max_retries
+    Escalated --> [*]: human review
+```
+
+The gap between `tau_enter` and `tau_exit` is the hysteresis dead-band — without it a `B_net`
+sitting near the line would flip the breaker every superstep. `max_retries` bounds the repair
+attempts **within one incident**; a clean recovery closes the incident and resets the counter.
 
 ## Design principles
 
@@ -95,15 +154,26 @@ flowchart LR
 ## Install
 
 ```bash
-pip install -e ".[dev]"        # from a clone; not yet on PyPI
+pip install weighted-emergent-bias
 ```
 
-Requires Python 3.10+. Runtime deps are just `numpy` and `networkx`; `langgraph` is an
-optional extra (`pip install -e ".[langgraph]"`).
+Requires Python 3.10+. Runtime dependencies are just `numpy` and `networkx` — no LLM SDK is
+bundled, and no network call happens unless you make one.
 
-## Quickstart (what runs today)
+| Extra | Install | Pulls in |
+| --- | --- | --- |
+| *(none)* | `pip install weighted-emergent-bias` | `numpy`, `networkx` — the whole core |
+| `langgraph` | `pip install "weighted-emergent-bias[langgraph]"` | Reference LangGraph adapter |
+| `anthropic` | `pip install "weighted-emergent-bias[anthropic]"` | Real-model adapter + validation harness (**makes billable API calls**) |
+| `study` | `pip install "weighted-emergent-bias[study]"` | `matplotlib`, for study plots |
+| `dev` | `pip install -e ".[dev]"` | Test, lint, and type-check toolchain |
 
-The perturbation engine and the ground-truth fake client are usable now:
+Optional integrations are **never imported by the core**; their tests sit behind `importorskip`,
+so the default suite needs no network and no API key.
+
+## Quickstart
+
+The perturbation engine and the ground-truth fake client are usable immediately:
 
 ```python
 from weighted_emergent_bias import AxisSpec, Substitution, perturb
@@ -191,6 +261,11 @@ flowchart TD
 | **M3** | Control — hysteresis breaker, recovery state machine, LangGraph adapter | v0.3 | ✅ shipped ([control study](docs/studies/phase3-control.md)) |
 | **M4** | Intervention — skeptic panel, trust-graph pruning, MADERA | v0.4 | ✅ shipped ([intervention study](docs/studies/phase4-intervention.md)) |
 | **M5** | Evidence — causal trail, SARIF 2.1.0 export, reporting | v0.5 | ✅ shipped ([evidence study](docs/studies/phase5-evidence.md)) |
+
+**All five modules are shipped.** What remains is deliberately *not* code: real-model validation
+(the harness is one command, but needs an API key and makes billable calls — and a single run is
+evidence, not validation) and benchmark reproduction (MALIBU / BBQ-Hard, which needs datasets and
+its own budgeted workstream). See the [CHANGELOG](CHANGELOG.md) for release history.
 
 Module plans: [PHASE-1](docs/plans/PHASE-1.md), [PHASE-2](docs/plans/PHASE-2.md),
 [PHASE-3](docs/plans/PHASE-3.md), [PHASE-4](docs/plans/PHASE-4.md), [PHASE-5](docs/plans/PHASE-5.md). The 2026-07 external-review triage is in

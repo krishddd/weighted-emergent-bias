@@ -6,6 +6,12 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-08-16
+
+**Correctness and distribution.** Six defects fixed where the code contradicted its own
+documented guarantees — two of them in the safety path (trust weighting, breaker escalation) and
+live in tagged v0.5.0. First release published to PyPI, with documentation on GitHub Pages.
+
 ### Added
 - **Optional pre-trigger `Verifier`** (`intervention/verifier.py`): the scope fork decided in the
   2026-07 review, now built. Opt-in and un-imported by the core; keeps *counterfactual bias* and
@@ -54,7 +60,21 @@ All notable changes to this project are documented here. Format follows
 - **`AgentDAG` caches its adjacency matrix and topological order** (`topology/dag.py`): the graph is
   immutable, so centrality no longer rebuilds them per lookup. `adjacency_matrix()` still returns a
   fresh copy. Corrected the `dag.py` docstring that told a maintainer to transpose `A` — the code
-  correctly consumes it as-is, and a transpose would re-invert the blast-radius ranking.
+  correctly consumes it as-is, and a transpose would re-invert the blast-radius ranking. The same
+  misleading "transposed" wording is corrected in the README.
+
+### Packaging
+- **Published to PyPI** as [`weighted-emergent-bias`](https://pypi.org/project/weighted-emergent-bias/),
+  built and uploaded by `.github/workflows/release.yml` on a `v*` tag via PyPI Trusted Publishing
+  (OIDC — no API token is stored). The workflow re-runs the full lint/type/test gate and asserts the
+  git tag matches the packaged version before building.
+- **Documentation site** at <https://krishddd.github.io/weighted-emergent-bias/>, built with
+  MkDocs Material (`[docs]` extra, `mkdocs.yml`) and deployed by `.github/workflows/docs.yml`.
+  Mermaid diagrams render natively.
+
+### Note for anyone who ran the M4 ablation before this release
+The WP7 trust-vs-uniform comparison was measuring the inverted trust score described above.
+Any numbers produced from it before `baf4fdb` should be re-run.
 
 ### Still not claimed
 Benchmark reproduction remains unscheduled, and **no validated-performance claim on real models has

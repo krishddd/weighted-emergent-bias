@@ -1,0 +1,56 @@
+name: Docs
+
+# Builds the MkDocs site and deploys it to GitHub Pages.
+# Requires the repository's Pages source to be set to "GitHub Actions"
+# (Settings -> Pages -> Build and deployment -> Source). Without that, the
+# deploy step fails with "Pages site not found" — nothing in this file can set it.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; queue instead, and don't cancel a run mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[docs]"
+
+      - name: Build site
+        run: mkdocs build --strict
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

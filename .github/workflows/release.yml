@@ -1,0 +1,93 @@
+name: Release
+
+# Publishes to PyPI via Trusted Publishing (OIDC). No API token is stored anywhere:
+# GitHub mints a short-lived OIDC identity for this workflow, and PyPI trades it for a
+# scoped upload token. That is why `id-token: write` below is mandatory — without it the
+# `pypa/gh-action-pypi-publish` step has nothing to exchange and fails with a 403.
+#
+# Trigger: pushing a `v*` tag. `workflow_dispatch` is kept so a failed publish can be
+# re-run from the Actions tab (e.g. the first run before PyPI's publisher is configured)
+# without cutting a throwaway tag.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Publishing an unverified build is the one irreversible step here: a PyPI version
+      # number can never be reused, even after a delete. So the full gate runs first.
+      - name: Install package (dev extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff (lint + format check)
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Mypy (strict)
+        run: mypy
+
+      - name: Pytest
+        run: pytest -m "not slow"
+
+      - name: Verify the tag matches the packaged version
+        # Catches the classic "tagged v0.6.0, forgot to bump pyproject" mistake before it
+        # becomes a permanently-wrong artifact on PyPI.
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(python -c "import tomllib,pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "tag=$TAG packaged=$PKG"
+          test "$TAG" = "$PKG" || { echo "::error::tag $TAG != pyproject version $PKG"; exit 1; }
+
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install build
+          python -m build
+
+      - name: Check distribution metadata
+        run: |
+          python -m pip install twine
+          twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # Must match the "Environment name" configured on the PyPI trusted publisher.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/weighted-emergent-bias
+    permissions:
+      id-token: write # required for Trusted Publishing; not inherited from the job above
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1

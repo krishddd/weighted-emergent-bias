@@ -1,0 +1,79 @@
+site_name: weighted-emergent-bias
+site_description: A runtime circuit-breaker for the Degeneration-of-Thought (DoT) problem in multi-agent LLM systems.
+site_url: https://krishddd.github.io/weighted-emergent-bias/
+repo_url: https://github.com/krishddd/weighted-emergent-bias
+repo_name: krishddd/weighted-emergent-bias
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  # Renders ```mermaid fences as diagrams rather than code blocks. Material ships the
+  # mermaid runtime itself, so no CDN script tag is needed in any page.
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Overview: index.md
+  - Design: DESIGN.md
+  - Roadmap: ROADMAP.md
+  - Example axes: example-axes.md
+  - Module plans:
+      - "M1 — Detection": plans/PHASE-1.md
+      - "M2 — Propagation": plans/PHASE-2.md
+      - "M3 — Control": plans/PHASE-3.md
+      - "M4 — Intervention": plans/PHASE-4.md
+      - "M5 — Evidence": plans/PHASE-5.md
+  - Studies:
+      - "Phase 1 — Calibration": studies/phase1-calibration.md
+      - "Phase 2 — Propagation": studies/phase2-propagation.md
+      - "Phase 3 — Control": studies/phase3-control.md
+      - "Phase 4 — Intervention": studies/phase4-intervention.md
+      - "Phase 5 — Evidence": studies/phase5-evidence.md
+  - Reviews:
+      - "2026-07 external review": reviews/2026-07-external-review-response.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/krishddd/weighted-emergent-bias
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/weighted-emergent-bias/
